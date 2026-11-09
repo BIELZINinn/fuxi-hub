@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Fuxi Mini</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: data:; style-src 'self' 'unsafe-inline'; media-src 'self' blob:">
+<link rel="stylesheet" href="mini.css"></head>
+<body>
+<div class="mw" id="mw">
+  <div class="mh"><span class="dot" id="mDot"></span><div class="mt"><b id="mName">Padrão</b><small id="mSub">Preset ativo</small></div>
+    <button class="mb" id="mPrev" title="Preset anterior"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><button class="mb" id="mNext" title="Próximo preset"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
+  <div class="mv"><button class="mb" id="mMute" title="Mudo"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="w" d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/></svg></button><input type="range" id="mVol" min="0" max="100" value="50"><span id="mVv">50%</span>
+    <button class="mb" id="mMic" title="Microfone"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 18v3"/><path class="sl" d="M4 4l16 16"/></svg></button></div>
+  <canvas id="mSp"></canvas>
+</div>
+<script src="spectrum.js"></script>
+<script src="mini.js"></script>
+</body></html>

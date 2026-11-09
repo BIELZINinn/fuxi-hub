@@ -1,0 +1,54 @@
+/* ===== Tutorial de primeira abertura ===== */
+#tour{position:fixed;inset:0;z-index:200;display:none}
+#tour.on{display:block}
+#tour .tsp{position:fixed;left:50%;top:50%;width:0;height:0;border-radius:18px;box-shadow:0 0 0 100vmax rgba(0,0,0,.78);border:1.5px solid var(--ac);
+  transition:left .6s cubic-bezier(.3,1.1,.4,1),top .6s cubic-bezier(.3,1.1,.4,1),width .6s cubic-bezier(.3,1.1,.4,1),height .6s cubic-bezier(.3,1.1,.4,1),border-radius .5s,opacity .4s}
+#tour .tsp:after{content:"";position:absolute;inset:-6px;border-radius:inherit;border:1px solid var(--ac);opacity:0;animation:tsPing 2.4s ease-out infinite}
+@keyframes tsPing{0%{transform:scale(.97);opacity:.7}100%{transform:scale(1.06);opacity:0}}
+#tour .tsp.none{border-color:transparent}#tour .tsp.none:after{display:none}
+.nav.tourhl{animation:tourNav 1.4s ease-in-out infinite!important}
+@keyframes tourNav{50%{box-shadow:0 0 34px 4px var(--acg)}}
+
+#tour .tcard{position:fixed;width:392px;right:30px;bottom:30px;border:1px solid #1f2a2d;border-radius:24px;background:linear-gradient(180deg,#0c0f11,#07080a);box-shadow:0 30px 80px -20px #000,0 0 60px -30px var(--ac);overflow:hidden;
+  opacity:0;transform:translateY(24px) scale(.97);transition:opacity .5s,transform .6s cubic-bezier(.2,.9,.2,1),right .6s cubic-bezier(.3,1.1,.4,1),left .6s,bottom .6s}
+#tour.on .tcard{opacity:1;transform:none}
+#tour .tcard.mid{right:calc(50% - 196px);bottom:calc(50% - 215px)}
+#tour .tart{height:138px;position:relative;display:grid;place-items:center;background:radial-gradient(120% 100% at 50% 0%,color-mix(in srgb,var(--ac) 13%,transparent),transparent 70%);border-bottom:1px solid #141a1c;overflow:hidden}
+#tour .tart svg{width:230px;height:124px;overflow:visible}
+#tour .tbody{padding:18px 24px 6px}
+#tour .tstep{font-size:11px;letter-spacing:.22em;color:var(--ac);font-weight:600;text-transform:uppercase}
+#tour h2{font-size:21px;font-weight:600;margin:6px 0 8px;letter-spacing:.01em}
+#tour p{font-size:13.5px;line-height:1.6;color:#b6b6c0}
+#tour .ttips{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:7px}
+#tour .ttips li{position:relative;padding-left:20px;font-size:12.5px;line-height:1.5;color:#8f8f9a}
+#tour .ttips li:before{content:"";position:absolute;left:3px;top:7px;width:6px;height:6px;border-radius:50%;background:var(--ac);box-shadow:0 0 8px var(--ac)}
+#tour .tfoot{display:flex;align-items:center;justify-content:space-between;padding:14px 24px 20px;gap:10px}
+#tour .tdots{display:flex;gap:6px}
+#tour .tdots i{width:6px;height:6px;border-radius:6px;background:#2a2a32;cursor:pointer;transition:.35s}
+#tour .tdots i.on{width:22px;background:var(--ac);box-shadow:0 0 10px var(--acg)}#tour .tdots i.done{background:#1d6f77}
+#tour .tbtns{display:flex;gap:8px;align-items:center}
+#tour .tskip{font-size:12px;color:var(--mut);padding:8px 6px}#tour .tskip:hover{color:#fff}
+#tour .tbtns .solid{margin-left:0;padding:9px 22px}
+/* troca de conteúdo entre etapas */
+#tour .tswap{animation:tSwap .55s cubic-bezier(.2,.9,.2,1) both}
+@keyframes tSwap{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+#tour .ttips li{animation:tSwap .6s cubic-bezier(.2,.9,.2,1) both}#tour .ttips li:nth-child(2){animation-delay:.08s}#tour .ttips li:nth-child(3){animation-delay:.16s}
+
+/* ilustrações animadas (todas em SVG + CSS) */
+.tw{fill:none;stroke:var(--ac);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.tf{fill:var(--ac)}.tm{fill:none;stroke:#2c3a3d;stroke-width:1.5}.tg{fill:#3ddc5a}
+.t-ring{transform-box:fill-box;transform-origin:center;animation:tRing 2.8s ease-out infinite}.t-ring:nth-of-type(2){animation-delay:.9s}.t-ring:nth-of-type(3){animation-delay:1.8s}
+@keyframes tRing{0%{transform:scale(.35);opacity:.8}100%{transform:scale(1.6);opacity:0}}
+.t-bar{transform-box:fill-box;transform-origin:50% 100%;animation:tBar 1.8s ease-in-out infinite}
+@keyframes tBar{50%{transform:scaleY(.35)}}
+.t-knob{animation:tKnob 3s ease-in-out infinite}
+@keyframes tKnob{50%{transform:translateX(var(--kx,40px))}}
+.t-float{animation:tFloat 3.4s ease-in-out infinite}@keyframes tFloat{50%{transform:translateY(-6px)}}
+.t-spin{transform-box:fill-box;transform-origin:center;animation:tSpin 9s linear infinite}@keyframes tSpin{to{transform:rotate(360deg)}}
+.t-slide{animation:tSlide 3.6s ease-in-out infinite}@keyframes tSlide{0%,100%{transform:translateX(-10px);opacity:.5}50%{transform:none;opacity:1}}
+.t-blink{animation:tBlink 1.6s ease-in-out infinite}@keyframes tBlink{50%{opacity:.2}}
+.t-pop{transform-box:fill-box;transform-origin:center;animation:tPop 2.6s ease-in-out infinite}@keyframes tPop{50%{transform:scale(1.22)}}
+.t-draw{stroke-dasharray:60;stroke-dashoffset:60;animation:tDraw 1s .3s ease-out forwards}@keyframes tDraw{to{stroke-dashoffset:0}}
+.t-orbit{transform-box:view-box;transform-origin:115px 62px;animation:tSpin 5s linear infinite}
+.t-up{animation:tUp 1.8s ease-in-out infinite}@keyframes tUp{0%{transform:translateY(8px);opacity:0}40%{opacity:1}100%{transform:translateY(-12px);opacity:0}}
+.t-conf{animation:tConf 2.4s ease-out infinite}@keyframes tConf{0%{transform:translateY(10px) scale(.4);opacity:0}30%{opacity:1}100%{transform:translateY(-26px) scale(1);opacity:0}}

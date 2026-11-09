@@ -1,0 +1,102 @@
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:transparent;overflow:hidden;font-family:"Segoe UI Variable","Segoe UI",system-ui,sans-serif;color:#f2f2f4;-webkit-user-select:none;user-select:none}
+#stack{position:fixed;inset:0;padding:10px;display:flex;flex-direction:column;pointer-events:none}
+#stack.top{justify-content:flex-start}
+#stack.bottom{justify-content:flex-end}
+
+/* cada aviso: entra deslizando, desfocado, e abre espaço suavemente (grid 0fr -> 1fr) */
+.wrap{--dx:60px;display:grid;grid-template-rows:0fr;opacity:0;transform:translateX(var(--dx)) scale(.96);filter:blur(10px);
+  transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1),opacity .35s ease,transform .5s cubic-bezier(.2,.9,.2,1),filter .45s ease}
+.wrap.in{grid-template-rows:1fr;opacity:1;transform:none;filter:none}
+.wrap.out{grid-template-rows:0fr;opacity:0;transform:translateX(var(--dxo,var(--dx))) scale(.97);filter:blur(8px);
+  transition:grid-template-rows .4s ease .08s,opacity .3s ease,transform .38s cubic-bezier(.6,0,.8,.4),filter .3s ease}
+.clip{min-height:0;overflow:hidden}
+
+.card{position:relative;margin:6px;width:384px;display:flex;align-items:center;gap:14px;padding:14px 16px 16px;border-radius:18px;overflow:hidden;
+  background:rgba(6,6,9,.94);border:1px solid #1d1d23;box-shadow:0 14px 40px -10px rgba(0,0,0,.9),0 0 0 0 rgba(var(--cr),0);animation:glow 1.6s ease-out forwards}
+.card:before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:rgb(var(--cr));box-shadow:0 0 14px rgba(var(--cr),.8)}
+@keyframes glow{0%{box-shadow:0 14px 40px -10px rgba(0,0,0,.9),0 0 0 0 rgba(var(--cr),0)}35%{box-shadow:0 14px 40px -10px rgba(0,0,0,.9),0 0 34px 1px rgba(var(--cr),.42)}100%{box-shadow:0 14px 40px -10px rgba(0,0,0,.9),0 0 22px 0 rgba(var(--cr),.12)}}
+
+.ic{flex:none;width:54px;height:54px;border-radius:14px;display:grid;place-items:center;overflow:hidden;position:relative;
+  background:radial-gradient(circle at 25% 20%,rgba(var(--cr),.55),#050507 78%);border:1px solid rgba(var(--cr),.35)}
+.ic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ic svg{width:26px;height:26px;fill:none;stroke:rgb(var(--cr));stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ic .ini{font-weight:800;font-size:19px;letter-spacing:-.02em;color:rgb(var(--cr))}
+.tx{min-width:0;flex:1}
+.kick{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(var(--cr),.9);margin-bottom:3px}
+.tx b{display:block;font-size:15.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:12.5px;line-height:1.35;color:#9a9aa6;margin-top:2px;overflow:hidden}
+.spark{flex:none;width:88px;height:34px;opacity:.9}
+.bar{position:absolute;left:0;bottom:0;height:2px;width:100%;background:rgb(var(--cr));opacity:.75;transform-origin:left;animation:bar var(--dur) linear forwards}
+@keyframes bar{to{transform:scaleX(0)}}
+
+/* banner de modo de jogo: foto do jogo ao fundo, varredura de luz, título que se revela, barras animadas */
+.card.gm{display:block;width:384px;height:112px;padding:0;border-radius:20px}
+.gm-art{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.18);animation:kb 7s ease-out forwards}
+.gm-art.ph{background:radial-gradient(circle at 82% 40%,rgba(var(--cr),.55),#050507 62%);display:grid;place-items:center;justify-items:end}
+.gm-art.ph span{font-weight:900;font-size:78px;letter-spacing:-.04em;color:rgba(var(--cr),.28);padding-right:26px;transform:translateX(30px);animation:ph 1s .1s cubic-bezier(.2,.9,.2,1) forwards;opacity:0}
+@keyframes kb{to{transform:scale(1.02)}}
+@keyframes ph{to{transform:none;opacity:1}}
+.gm-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(4,4,6,.97) 0%,rgba(4,4,6,.92) 40%,rgba(4,4,6,.5) 54%,rgba(4,4,6,0) 66%)}
+.gm-scan{position:absolute;top:0;bottom:0;width:90px;left:-110px;background:linear-gradient(90deg,transparent,rgba(var(--cr),.5),rgba(255,255,255,.35),transparent);transform:skewX(-18deg);filter:blur(2px);animation:sw .95s .2s cubic-bezier(.5,0,.3,1) forwards}
+@keyframes sw{to{left:110%}}
+.gm-body{position:absolute;left:24px;top:0;bottom:6px;right:96px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.gm-kick{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:rgb(var(--cr));opacity:0;animation:up .5s .3s ease forwards}
+.gm-kick i{display:block;height:2px;width:0;border-radius:2px;background:rgb(var(--cr));box-shadow:0 0 10px rgba(var(--cr),.9);animation:ln .6s .35s cubic-bezier(.2,.9,.2,1) forwards}
+@keyframes ln{to{width:22px}}
+.gm-title{font-size:27px;font-weight:700;letter-spacing:-.01em;line-height:1.1;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;filter:blur(8px);transform:translateY(8px);animation:rv .65s .42s cubic-bezier(.2,.9,.2,1) forwards}
+.gm-sub{max-width:205px;font-size:12.5px;color:#a8a8b4;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;animation:up .5s .62s ease forwards}
+.gm-title.sm{font-size:21px;margin-top:7px}.gm-title.xs{font-size:18px;margin-top:9px}                       /* nomes longos (Counter-Strike 2, Call of Duty Warzone) não invadem o logo */
+@keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes rv{to{opacity:1;filter:none;transform:none}}
+.gm-eq{position:absolute;right:20px;bottom:18px;display:flex;align-items:flex-end;gap:3px;height:30px}
+.gm-eq i{width:3px;height:100%;border-radius:2px;background:rgba(255,255,255,.92);box-shadow:0 0 8px rgba(var(--cr),.9);transform-origin:bottom;transform:scaleY(.2);animation:eqb .9s calc(var(--i)*-.13s) ease-in-out infinite alternate}
+@keyframes eqb{0%{transform:scaleY(.15)}100%{transform:scaleY(1)}}
+/* saída: o cartão já aparece pronto (sem repetir a entrada) e, perto do fim, "se desfaz": luz volta da direita para a esquerda,
+   linha encolhe, título esmaece e anda para trás, barras caem, foto apaga. Depois desliza para fora. */
+/* saída do banner: volta pelo mesmo caminho da entrada (desliza para o lado e desfoca); só depois a altura fecha, sem "subir" */
+.wrap.gmw.out{transform:translateX(var(--dxo,var(--dx))) scale(.985);filter:blur(5px);opacity:0;
+  transition:grid-template-rows .2s ease .8s,opacity .55s cubic-bezier(.4,0,.9,.6) .12s,transform .75s cubic-bezier(.45,0,.7,.4),filter .3s ease .45s}
+/* o conteúdo acompanha o cartão, só um pouco atrasado (efeito sutil de arrasto) */
+.wrap.gmw .gm-body,.wrap.gmw .gm-eq{transition:transform .75s cubic-bezier(.45,0,.7,.4),opacity .6s ease}
+.wrap.gmw.out .gm-body{transform:translateX(-12px);opacity:.15}
+.wrap.gmw.out .gm-eq{transform:translateX(-8px);opacity:.2}
+.card.gm.end .gm-art{animation:none;transform:scale(1.02);transition:filter 1s ease,transform 1.2s ease}
+.card.gm.end .gm-art.ph span{animation:none;opacity:1;transform:none;transition:opacity 1s,transform 1.2s}
+.card.gm.end .gm-scan{animation:none;opacity:0;left:110%}
+.card.gm.end .gm-kick{animation:none;opacity:1;color:#c8c8d2;transition:opacity .6s}
+.card.gm.end .gm-kick i{animation:none;width:22px;background:#c8c8d2;box-shadow:none;transition:width .7s cubic-bezier(.6,0,.3,1)}
+.card.gm.end .gm-title{animation:none;opacity:1;filter:none;transform:none;transition:opacity .8s ease,filter .8s ease,transform .9s cubic-bezier(.6,0,.3,1)}
+.card.gm.end .gm-sub{animation:none;opacity:1;transition:opacity .6s ease}
+.card.gm.end .gm-eq i{animation:eqb .9s calc(var(--i)*-.13s) ease-in-out infinite alternate;opacity:.9}
+.card.gm.end.closing .gm-art{filter:grayscale(1) brightness(.45);transform:scale(1.12)}
+.card.gm.end.closing .gm-art.ph span{opacity:0;transform:translateX(24px)}
+.card.gm.end.closing .gm-scan{opacity:1;animation:swb 1s cubic-bezier(.5,0,.3,1) forwards}
+@keyframes swb{from{left:110%}to{left:-120px}}
+.card.gm.end.closing .gm-kick i{width:0}
+.card.gm.end.closing .gm-kick{opacity:.35}
+.card.gm.end.closing .gm-title{opacity:.18;filter:blur(5px);transform:translateX(-16px)}
+.card.gm.end.closing .gm-sub{opacity:0}
+.card.gm.end.closing .gm-eq i{animation:none;transform:scaleY(.08);opacity:.35;transition:transform .9s cubic-bezier(.5,0,.3,1) calc(var(--i)*.05s),opacity .9s}
+
+/* animação "suave": só aparece e some (sem deslizar nem desfocar) */
+.wrap.anim-fade{filter:none;transform:scale(.98)}.wrap.anim-fade.in{transform:none}
+.wrap.anim-fade.out,.wrap.gmw.anim-fade.out{filter:none;transform:scale(.985)}
+/* animação "nenhuma": tudo aparece e some na hora, o banner já vem completo */
+.wrap.anim-none,.wrap.anim-none.out,.wrap.gmw.anim-none.out{transition:none!important;filter:none!important;transform:none!important}
+.wrap.anim-none .card,.wrap.anim-none .card *{animation:none!important}
+.wrap.anim-none .gm-kick,.wrap.anim-none .gm-title,.wrap.anim-none .gm-sub,.wrap.anim-none .gm-art.ph span{opacity:1!important;transform:none!important;filter:none!important}
+.wrap.anim-none .gm-art{transform:scale(1.02)!important}.wrap.anim-none .gm-scan{display:none}.wrap.anim-none .gm-kick i{width:22px!important}
+.wrap.anim-none .gm-eq i{transform:scaleY(.6)!important}
+
+/* identidade cloud: selo de nuvem no canto, com o nome do serviço */
+.gm-cloud{position:absolute;right:12px;top:10px;z-index:3;display:flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:12px;background:rgba(10,14,22,.62);border:1px solid rgba(140,200,255,.45);
+  backdrop-filter:blur(8px);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:#bfe3ff;opacity:0;animation:up .5s .75s ease forwards}
+.gm-cloud svg{width:13px;height:13px;fill:none;stroke:#bfe3ff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.wrap.anim-none .gm-cloud{opacity:1!important;animation:none!important}
+
+/* estilo compacto */
+.card.compact{width:300px;padding:10px 14px 12px;gap:11px;border-radius:15px}
+.card.compact .ic{width:38px;height:38px;border-radius:11px}.card.compact .ic svg{width:19px;height:19px}.card.compact .ic .ini{font-size:14px}
+.card.compact .kick,.card.compact .spark{display:none}
+.card.compact .tx b{font-size:13.5px}.card.compact .tx span{font-size:11.5px}

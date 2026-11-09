@@ -1,0 +1,39 @@
+{
+  "name": "fuxi-hub",
+  "version": "0.4.3",
+  "description": "Hub para o Fuxi H3: equalizador, presets por jogo, mixer por app e visualizador animado",
+  "author": "Gabriel",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "native": "powershell -NoProfile -File native/build.ps1",
+    "dist": "electron-builder --win nsis"
+  },
+  "license": "MIT",
+  "build": {
+    "appId": "com.gabriel.fuxihub",
+    "productName": "Fuxi Hub",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "preload-toast.js", "package.json", "src/**/*", "data/**/*", "assets/**/*", "extension/**/*"],
+    "extraResources": [{ "from": "native", "to": "native", "filter": ["*.exe"] }],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "nsis": {
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Fuxi Hub"
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0"
+  }
+}
+

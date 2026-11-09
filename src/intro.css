@@ -1,0 +1,88 @@
+/* ===== Aberturas do Fuxi Hub ===== */
+#intro{position:fixed;inset:0;z-index:300;background:#000;display:none;overflow:hidden;cursor:pointer;-webkit-app-region:no-drag}
+#intro.on{display:block}
+#intro.out{animation:iOut .55s ease forwards}
+@keyframes iOut{to{opacity:0;filter:blur(8px)}}
+.i-stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px}
+.i-hint{position:absolute;bottom:22px;left:0;right:0;text-align:center;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:#3a3a42}
+.i-mark{width:170px;height:170px;overflow:visible;display:block}
+.i-word{display:flex;font-size:34px;font-weight:300;letter-spacing:.34em;color:#ececf1;padding-left:.34em;white-space:nowrap}
+.i-word i{font-style:normal;display:inline-block}.i-word .gap{width:.5em}
+.i-word i.hb{font-weight:700;color:#2ef2ff}
+.i-sub{font-size:10.5px;letter-spacing:.44em;text-transform:uppercase;color:#6c6c7a;padding-left:.44em}
+.m-cup{transform-box:fill-box;transform-origin:center}
+/* brilho que cruza as conchas (usado em todas as aberturas, em tempos diferentes) */
+@keyframes glint{0%{transform:translateX(0);opacity:0}12%{opacity:.5}88%{opacity:.5}100%{transform:translateX(150px);opacity:0}}
+.i-scanner .m-glint{animation:glint 1s 1.9s ease-in-out}.i-waves .m-glint{animation:glint 1s 2.6s ease-in-out}
+.i-neon .m-glint{animation:glint 1s 2.1s ease-in-out}.i-cinema .m-glint{animation:glint 1.1s 1.9s ease-in-out}
+
+/* --- 1. Pulso --- */
+.i-pulse .i-glow{position:absolute;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(46,242,255,.22),rgba(138,109,255,.08) 45%,transparent 70%);opacity:0;animation:pGlow 2.4s .5s ease-out forwards}
+@keyframes pGlow{0%{opacity:0;transform:scale(.4)}40%{opacity:1}100%{opacity:.55;transform:scale(1)}}
+.i-pulse .i-ring{position:absolute;width:170px;height:170px;border-radius:50%;border:2px solid #2ef2ff;opacity:0;margin-top:-72px;animation:pRing 1.6s 1.25s cubic-bezier(.2,.6,.3,1) forwards}
+.i-pulse .i-ring.r2{border-color:#8a6dff;animation-delay:1.6s}
+@keyframes pRing{0%{opacity:.8;transform:scale(.7)}100%{opacity:0;transform:scale(3.4)}}
+.i-pulse .i-mark{position:relative;filter:drop-shadow(0 0 16px rgba(46,242,255,.4))}
+.i-pulse .m-arc{stroke-dasharray:100;stroke-dashoffset:100;animation:pDraw 1.1s .15s cubic-bezier(.5,0,.2,1) forwards}
+@keyframes pDraw{to{stroke-dashoffset:0}}
+.i-pulse .m-cup{opacity:0;transform:scale(.4);animation:pPop .65s cubic-bezier(.2,1.4,.4,1) forwards}
+.i-pulse .m-cl{animation-delay:.85s}.i-pulse .m-cr{animation-delay:.95s}
+@keyframes pPop{to{opacity:1;transform:none}}
+.i-pulse .m-s{stroke-dasharray:100;stroke-dashoffset:100;animation:pCut .32s cubic-bezier(.4,0,.2,1) forwards}
+.i-pulse .m-s1,.i-pulse .m-s4{animation-delay:1.45s}.i-pulse .m-s2,.i-pulse .m-s5{animation-delay:1.55s}.i-pulse .m-s3,.i-pulse .m-s6{animation-delay:1.65s}
+@keyframes pCut{to{stroke-dashoffset:0}}
+.i-pulse .m-mic{opacity:0;animation:fadeUp .5s 1.7s ease forwards}
+.i-pulse .m-glint{animation:glint 1.1s 1.95s ease-in-out}
+.i-pulse .i-word{letter-spacing:1em;animation:pTrack 1.7s 1.4s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes pTrack{to{letter-spacing:.34em}}
+.i-pulse .i-word i{opacity:0;transform:translateY(14px);filter:blur(8px);animation:pLet .7s calc(1.4s + var(--k)*.07s) cubic-bezier(.2,.9,.2,1) forwards}
+@keyframes pLet{to{opacity:1;transform:none;filter:none}}
+.i-pulse .i-sub{opacity:0;animation:fadeUp .7s 2.15s ease forwards}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* --- 2. Scanner --- */
+.i-scanner .i-bgbars{position:absolute;left:0;right:0;bottom:0;height:200px;display:flex;align-items:flex-end;justify-content:center;gap:10px;opacity:.5;-webkit-mask:linear-gradient(transparent,#000 70%);mask:linear-gradient(transparent,#000 70%)}
+.i-scanner .i-bgbars i{width:6px;height:calc(var(--h)*1px);border-radius:3px;background:linear-gradient(#2ef2ff22,#2ef2ff);transform-origin:bottom;transform:scaleY(0);animation:sBar .9s calc(.2s + var(--i)*.03s) cubic-bezier(.2,.9,.2,1) forwards}
+@keyframes sBar{to{transform:scaleY(.5)}}
+.i-scanner .i-reveal{display:flex;flex-direction:column;align-items:center;gap:28px;clip-path:inset(0 100% 0 0);animation:sRev 1.4s .3s cubic-bezier(.55,.1,.35,1) forwards;padding:40px 120px}
+@keyframes sRev{to{clip-path:inset(0 -2% 0 0)}}
+.i-scanner .i-line{position:absolute;top:0;bottom:0;left:0;width:3px;background:linear-gradient(transparent,#2ef2ff 20%,#fff 50%,#2ef2ff 80%,transparent);box-shadow:0 0 30px 6px rgba(46,242,255,.65),0 0 90px 20px rgba(138,109,255,.35);opacity:0;animation:sLine 1.4s .3s cubic-bezier(.55,.1,.35,1) forwards}
+@keyframes sLine{0%{left:0;opacity:1}92%{opacity:1}100%{left:100%;opacity:0}}
+.i-scanner .i-flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,rgba(120,250,255,.5),transparent 55%);opacity:0;animation:sFlash .9s 1.65s ease-out forwards}
+@keyframes sFlash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+.i-scanner .i-mark{filter:drop-shadow(0 0 12px rgba(46,242,255,.4))}
+
+/* --- 3. Ondas --- */
+.i-waves .i-bars{position:absolute;display:flex;align-items:center;gap:7px;height:220px;animation:wOut .7s 1.7s cubic-bezier(.6,0,.4,1) forwards}
+.i-waves .i-bars i{display:block;width:6px;height:calc(var(--h)*200px);border-radius:3px;background:linear-gradient(#2ef2ff,#8a6dff);opacity:0;animation:wIn .5s calc(var(--i)*.012s) ease forwards,wDance .85s calc(var(--i)*-.09s) ease-in-out infinite alternate;box-shadow:0 0 12px rgba(46,242,255,.35)}
+@keyframes wIn{to{opacity:1}}
+@keyframes wDance{0%{transform:scaleY(.15)}100%{transform:scaleY(1)}}
+@keyframes wOut{0%{transform:scaleX(1);opacity:1;filter:none}100%{transform:scaleX(.06);opacity:0;filter:blur(6px)}}
+.i-waves .i-wlogo{position:absolute;display:flex;flex-direction:column;align-items:center;gap:28px;opacity:0;transform:scale(.82);filter:blur(10px);animation:wLogo .9s 1.75s cubic-bezier(.2,.9,.2,1) forwards}
+@keyframes wLogo{to{opacity:1;transform:none;filter:none}}
+.i-waves .i-mark{filter:drop-shadow(0 0 16px rgba(46,242,255,.5))}
+
+/* --- 4. Neon --- */
+.i-neon .i-nmark{animation:nFlick 1.5s .2s linear forwards;opacity:0}
+.i-neon .i-mark{filter:drop-shadow(0 0 6px #2ef2ff) drop-shadow(0 0 22px rgba(46,242,255,.7))}
+@keyframes nFlick{0%{opacity:0}8%{opacity:.95}11%{opacity:0}22%{opacity:.5}26%{opacity:0}40%{opacity:1}46%{opacity:.25}52%{opacity:1}60%{opacity:.6}66%,100%{opacity:1}}
+.i-neon .i-word i{opacity:0;animation:nLet .5s calc(1.1s + var(--k)*.1s) steps(1,end) forwards;text-shadow:0 0 8px rgba(46,242,255,.9),0 0 26px rgba(46,242,255,.55)}
+.i-neon .i-word i:not(.hb){text-shadow:0 0 8px rgba(255,255,255,.55),0 0 24px rgba(46,242,255,.4)}
+@keyframes nLet{0%{opacity:0}20%{opacity:1}35%{opacity:.1}55%{opacity:1}70%{opacity:.4}100%{opacity:1}}
+.i-neon .i-word{animation:nGlitch .5s 2.05s steps(1,end) 1}
+@keyframes nGlitch{0%{transform:translateX(0);text-shadow:none}15%{transform:translateX(-5px);filter:drop-shadow(3px 0 #ff2e63) drop-shadow(-3px 0 #2ef2ff)}30%{transform:translateX(4px)}45%{transform:translateX(-2px)}60%{transform:none;filter:none}100%{transform:none}}
+.i-neon .i-uline{height:2px;width:0;background:#2ef2ff;box-shadow:0 0 12px #2ef2ff,0 0 30px rgba(46,242,255,.7);animation:nLine .7s 1.8s cubic-bezier(.2,.9,.2,1) forwards;margin-top:-10px}
+@keyframes nLine{to{width:340px}}
+.i-neon .i-sub{opacity:0;animation:fadeUp .6s 2.2s ease forwards}
+
+/* --- 5. Cinema --- */
+.i-cinema .i-bloom{position:absolute;width:640px;height:640px;border-radius:50%;background:radial-gradient(circle,rgba(46,242,255,.18),rgba(138,109,255,.07) 45%,transparent 68%);opacity:0;animation:cBloom 2.2s .1s ease-out forwards}
+@keyframes cBloom{0%{opacity:0;transform:scale(1.4)}100%{opacity:1;transform:scale(1)}}
+.i-cinema .i-cmark{opacity:0;transform:scale(1.2);filter:blur(16px);animation:cMark 1.7s .15s cubic-bezier(.15,.8,.2,1) forwards}
+@keyframes cMark{to{opacity:1;transform:none;filter:none}}
+.i-cinema .i-mark{filter:drop-shadow(0 0 18px rgba(46,242,255,.35))}
+.i-cinema .i-cline{height:1px;width:0;background:linear-gradient(90deg,transparent,#2ef2ff,transparent);animation:cLine 1.2s 1.1s cubic-bezier(.2,.8,.2,1) forwards;margin:-6px 0}
+@keyframes cLine{to{width:300px}}
+.i-cinema .i-word{opacity:0;filter:blur(10px);letter-spacing:.55em;animation:cWord 1.4s 1.3s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes cWord{to{opacity:1;filter:none;letter-spacing:.34em}}
+.i-cinema .i-sub{opacity:0;animation:fadeUp .8s 2.1s ease forwards}

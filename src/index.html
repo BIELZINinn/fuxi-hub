@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Fuxi Hub</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: data: blob:; style-src 'self' 'unsafe-inline'">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="intro.css">
+<link rel="stylesheet" href="fx.css">
+<link rel="stylesheet" href="tour.css">
+</head>
+<body>
+<div class="titlebar">
+  <span class="brand"><span id="brandMark"></span>FUXI<b>HUB</b></span>
+  <div class="wc">
+    <button data-w="min">&#8211;</button><button data-w="max">&#9633;</button><button data-w="close" class="x">&#10005;</button>
+  </div>
+</div>
+
+<nav class="rail">
+  <i class="rind" id="rind"></i>
+  <button class="nav on" data-page="home" data-tip="Início"><svg viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="3" y="13" width="4.2" height="7.5" rx="1.8"/><rect x="16.8" y="13" width="4.2" height="7.5" rx="1.8"/><path class="w w1" d="M9.6 11.2a3.4 3.4 0 014.8 0"/><path class="w w2" d="M8 9a5.8 5.8 0 018 0"/></svg></button>
+  <button class="nav" data-page="eq" data-tip="Equalizador"><svg viewBox="0 0 24 24"><path d="M5 4v16M12 4v16M19 4v16"/><circle class="k k1" cx="5" cy="14" r="2.3"/><circle class="k k2" cx="12" cy="8" r="2.3"/><circle class="k k3" cx="19" cy="16" r="2.3"/></svg></button>
+  <button class="nav" data-page="mixer" data-tip="Mixer por app"><svg viewBox="0 0 24 24"><rect class="b b1" x="3.5" y="11" width="3.4" height="9" rx="1.7"/><rect class="b b2" x="8.4" y="4" width="3.4" height="16" rx="1.7"/><rect class="b b3" x="13.3" y="9" width="3.4" height="11" rx="1.7"/><rect class="b b4" x="18.2" y="6" width="3.4" height="14" rx="1.7"/></svg></button>
+  <button class="nav" data-page="games" data-tip="Jogos"><svg viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="19" height="12" rx="6"/><path d="M7.5 10v4.4M5.3 12.2h4.4"/><circle class="d d1" cx="15.6" cy="10.8" r="1.05"/><circle class="d d2" cx="18" cy="13.4" r="1.05"/></svg></button>
+  <button class="nav" data-page="cloud" data-tip="Cloud gaming"><svg viewBox="0 0 24 24"><path d="M7 18.5a4.2 4.2 0 01-.7-8.35A6.2 6.2 0 0118.2 9.4 4.5 4.5 0 0117.4 18.5z"/><path class="up" d="M12 16v-4.2M10.2 13.6 12 11.8l1.8 1.8"/></svg></button>
+  <button class="nav" data-page="stats" data-tip="Seu perfil"><svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 01-8 0z"/><path d="M8 6H5.5a2.5 2.5 0 002.8 3.6M16 6h2.5a2.5 2.5 0 01-2.8 3.6"/><path d="M12 13v4M8.5 20.5h7M9.5 17h5"/></svg></button>
+  <button class="nav" data-page="settings" data-tip="Configurações"><svg viewBox="0 0 24 24"><g class="gear"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></g></svg></button>
+  <button class="nav" data-page="device" data-tip="Dispositivo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.6"/><circle class="rg rg1" cx="12" cy="12" r="6"/><circle class="rg rg2" cx="12" cy="12" r="9.4"/></svg></button>
+</nav>
+
+<main>
+  <!-- INÍCIO -->
+  <section class="page on" id="p-home">
+    <div class="hero">
+      <div class="viewer" id="viewer">
+        <div class="glow"></div>
+        <div class="hero3d">
+          <div class="hp">
+            <div class="hpm"><img src="../assets/fuxi/hero.png" alt="Fuxi H3"></div>
+            <div class="shine"></div>
+            <div class="scan"></div>
+          </div>
+          <svg class="generic" viewBox="0 0 200 200"><path d="M30 120V100a70 70 0 01140 0v20"/><rect x="18" y="108" width="34" height="58" rx="14"/><rect x="148" y="108" width="34" height="58" rx="14"/></svg>
+        </div>
+        <div class="baseline"></div>
+        <div class="pulse"></div>
+      </div>
+      <div class="herotext">
+        <div class="devname" id="devname">Procurando fone…</div>
+        <div class="devsub" id="devsub">&nbsp;</div>
+        <div class="hcols" id="hcols" title="Cor do fone"><button data-c="white" data-n="Branco" style="--c1:#ffffff;--c2:#b9b9c1"></button><button data-c="bw" data-n="Preto e branco" style="--c1:#f4f4f6;--c2:#16161a;--sp:50%"></button><button data-c="black" data-n="Preto" style="--c1:#4a4a50;--c2:#0b0b0d"></button></div>
+      <div class="pill" id="activePill"><i></i><span id="activeName">Padrão</span></div>
+      </div>
+    </div>
+    <div class="quick" id="quick"></div>
+  </section>
+
+  <!-- EQ -->
+  <section class="page" id="p-eq">
+    <header class="ph"><h1 id="eqTitle">Equalizador</h1>
+      <div class="actions"><button class="ghost" id="eqDel" hidden>Excluir</button><button class="ghost" id="eqReset">Restaurar</button><button class="solid" id="eqApply">Aplicar</button></div></header>
+    <div class="abrow">
+      <label class="switch"><span>Ouvir ao vivo</span><input type="checkbox" id="liveSw"><i></i></label>
+      <div class="seg" id="abSeg" title="Compara a sua curva (B) com o som sem equalização (A), no mesmo volume">
+        <button data-v="A">A · sem EQ</button><button data-v="B" class="on">B · com EQ</button>
+      </div>
+      <span class="pvtag" id="pvTag"></span>
+      <button class="ghost" id="pvStop" hidden>Parar prévia</button>
+    </div>
+    <div class="eqwrap"><svg id="eqgraph"></svg></div>
+    <div class="bandpanel">
+      <span class="bpt" id="bpTitle">Faixa 4</span>
+      <label>Frequência <input id="bpF" class="inp num" type="number" min="20" max="20000" step="1"><i>Hz</i></label>
+      <label>Ganho <input id="bpG" class="inp num" type="number" min="-12" max="12" step="0.5"><i>dB</i></label>
+      <label>Q <input id="bpQ" class="inp num" type="number" min="0.3" max="8" step="0.1"></label>
+      <label>Tipo <select id="bpT" class="sel" style="min-width:128px;padding:7px 10px"><option value="PK">Pico (sino)</option><option value="LSC">Shelf de graves</option><option value="HSC">Shelf de agudos</option></select></label>
+      <button class="ghost" id="bpReset">Restaurar faixa</button>
+      <span class="bph">Arraste o ponto para os lados (frequência) e para cima/baixo (ganho). A roda do mouse muda o Q.</span>
+    </div>
+    <div class="bandrow" id="bandrow"></div>
+    <div class="eqinfo" id="eqinfo"></div>
+    <div class="comfort" id="comfort"></div>
+    <div class="row">
+      <input id="saveName" class="inp" placeholder="Nome do novo preset" maxlength="28">
+      <button class="ghost" id="saveNew">Salvar como novo</button>
+      <span class="sp"></span>
+      <button class="ghost" id="exp">Exportar</button><button class="ghost" id="imp">Importar</button>
+    </div>
+    <div class="row" id="assignRow" hidden><span class="lbl">Ao abrir este jogo, usar:</span><select id="assignSel" class="inp"></select></div>
+    <div class="chips" id="eqChips"></div>
+  </section>
+
+  <!-- MIXER -->
+  <section class="page" id="p-mixer">
+    <header class="ph"><h1>Mixer</h1></header>
+    <div class="mrow master" id="masterRow"></div>
+    <div class="mrow master" id="micRow"></div>
+    <div id="mixer"></div>
+    <p class="hint" id="mixHint">Os apps aparecem aqui quando estiverem tocando algum som.</p>
+  </section>
+
+  <!-- JOGOS -->
+  <section class="page" id="p-games">
+    <header class="ph"><h1>Jogos</h1>
+      <div class="actions"><button class="ghost" id="artBtn">Pasta de imagens</button>
+      <label class="switch"><span>Troca automática</span><input type="checkbox" id="autoSw"><i></i></label></div></header>
+    <div id="nowBox"></div>
+    <div class="gtools">
+      <div class="gsearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="gSearch" placeholder="Buscar jogo…" autocomplete="off" spellcheck="false"></div>
+      <div class="gfilters" id="gFilters"></div>
+      <select id="gSort" class="sel" title="Ordenar"><option value="fav">Favoritos primeiro</option><option value="az">Nome (A–Z)</option><option value="most">Mais jogados</option><option value="recent">Jogados recentemente</option></select>
+      <span class="gcount" id="gCount"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- CLOUD GAMING -->
+  <section class="page" id="p-cloud">
+    <header class="ph"><h1>Cloud gaming</h1>
+      <div class="actions"><label class="switch"><span>Reconhecer jogos na nuvem</span><input type="checkbox" id="clEn"><i></i></label></div></header>
+    <div id="clBox"></div>
+  </section>
+
+  <!-- PERFIL -->
+  <section class="page" id="p-stats">
+    <header class="ph"><h1>Seu perfil</h1></header>
+    <div id="stBox"></div>
+  </section>
+
+  <!-- AJUSTES -->
+  <section class="page" id="p-settings">
+    <header class="ph"><h1>Configurações</h1></header>
+    <div class="cfg">
+      <nav class="cfgnav" id="cfgNav">
+        <button data-s="geral" class="on">Geral</button><button data-s="anim">Animações</button><button data-s="avisos">Avisos</button>
+        <button data-s="surround">Surround</button><button data-s="atalhos">Atalhos</button><button data-s="jogos">Jogos</button><button data-s="regras">Regras</button><button data-s="sobre">Sobre</button>
+      </nav>
+      <div class="cfgbody">
+        <div class="cfgsec on" data-s="geral"><div class="cards" id="sgBox"></div></div>
+        <div class="cfgsec" data-s="anim"><div class="cards" id="inBox"></div><div class="cards" id="anBox"></div></div>
+        <div class="cfgsec" data-s="avisos"><div class="cards" id="nfBox"></div><div class="cards" id="gmBox"></div></div>
+        <div class="cfgsec" data-s="atalhos"><div class="cards" id="hkBox"></div></div>
+        <div class="cfgsec" data-s="jogos"><div class="cards" id="jgBox"></div></div>
+        <div class="cfgsec" data-s="surround"><div class="cards" id="svBox"></div></div>
+        <div class="cfgsec" data-s="regras"><div class="cards" id="rlBox"></div></div>
+        <div class="cfgsec" data-s="sobre"><div class="cards" id="sbBox"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DISPOSITIVO -->
+  <section class="page" id="p-device">
+    <header class="ph"><h1>Dispositivo</h1></header>
+    <div class="cards" id="devcards"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+<div id="intro"></div>
+<script src="mark.js"></script>
+<script src="intro.js"></script>
+<script src="viewer.js"></script>
+<script src="eqmath.js"></script>
+<script src="cloudmark.js"></script>
+<script src="fx.js"></script>
+<script src="spectrum.js"></script>
+<script src="app.js"></script>
+<script src="fx2.js"></script>
+<script src="stats.js"></script>
+<script src="tour.js"></script>
+</body>
+</html>
+

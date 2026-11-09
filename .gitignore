@@ -1,0 +1,20 @@
+# Este repositório contém só o Fuxi Hub. Tudo é ignorado por padrão e a lista abaixo libera o que faz parte do app.
+/*
+!/.gitignore
+!/README.md
+!/LICENSE
+!/package.json
+!/package-lock.json
+!/main.js
+!/preload.js
+!/preload-toast.js
+!/src/
+!/assets/
+!/data/
+!/extension/
+!/native/
+!/build/
+!/tools/
+!/docs/
+node_modules/
+dist/
