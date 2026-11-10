@@ -1,6 +1,6 @@
 {
   "name": "fuxi-hub",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "description": "Hub para o Fuxi H3: equalizador, presets por jogo, mixer por app e visualizador animado",
   "author": "Gabriel",
   "main": "main.js",
@@ -13,9 +13,30 @@
   "build": {
     "appId": "com.gabriel.fuxihub",
     "productName": "Fuxi Hub",
-    "directories": { "output": "dist" },
-    "files": ["main.js", "preload.js", "preload-toast.js", "package.json", "src/**/*", "data/**/*", "assets/**/*", "extension/**/*"],
-    "extraResources": [{ "from": "native", "to": "native", "filter": ["*.exe"] }],
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "preload-toast.js",
+      "preload-badge.js",
+      "preload-np.js",
+      "package.json",
+      "src/**/*",
+      "data/**/*",
+      "assets/**/*",
+      "extension/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "native",
+        "to": "native",
+        "filter": [
+          "*.exe"
+        ]
+      }
+    ],
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico",
@@ -33,7 +54,10 @@
   },
   "devDependencies": {
     "electron": "^45.2.3",
-    "electron-builder": "^26.18.0"
+    "electron-builder": "^26.18.0",
+    "three": "^0.170.0"
+  },
+  "dependencies": {
+    "qrcode-generator": "^1.4.4"
   }
 }
-

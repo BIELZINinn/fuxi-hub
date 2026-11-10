@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Fuxi Hub - Cloud Gaming",
-  "version": "1.0.0",
-  "description": "Avisa o Fuxi Hub (neste PC) qual jogo está aberto no Xbox Cloud Gaming e no GeForce NOW. Não envia nada para a internet.",
+  "version": "1.2.0",
+  "description": "Avisa o Fuxi Hub (neste PC) qual jogo está aberto no Xbox Cloud Gaming e no GeForce NOW, e quando Spotify ou YouTube estão tocando. Não envia nada para a internet.",
   "permissions": ["tabs"],
-  "host_permissions": ["http://127.0.0.1/*", "https://www.xbox.com/*", "https://play.geforcenow.com/*", "https://*.geforcenow.com/*"],
+  "host_permissions": ["http://127.0.0.1/*", "https://www.xbox.com/*", "https://play.geforcenow.com/*", "https://*.geforcenow.com/*", "https://open.spotify.com/*", "https://www.youtube.com/*"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [
     { "matches": ["https://www.xbox.com/*/play*", "https://www.xbox.com/play*"], "js": ["content.js"], "run_at": "document_idle" },
-    { "matches": ["https://play.geforcenow.com/*", "https://*.geforcenow.com/*"], "js": ["content.js"], "run_at": "document_idle" }
+    { "matches": ["https://play.geforcenow.com/*", "https://*.geforcenow.com/*"], "js": ["content.js"], "run_at": "document_idle" },
+    { "matches": ["https://open.spotify.com/*", "https://www.youtube.com/*"], "js": ["media.js"], "run_at": "document_idle" }
   ]
 }

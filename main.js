@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog, screen, Tray, Menu, globalShortcut, nativeImage, desktopCapturer, session } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, screen, Tray, Menu, globalShortcut, nativeImage, desktopCapturer, session, net } = require('electron');
 const { execFile, spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
@@ -51,7 +51,31 @@ const mergeIntro = i => ({ style: INTRO_STYLES.includes(i && i.style) ? i.style 
 // ---- cloud gaming (xCloud / GeForce NOW) e regras por programa ----
 const UI_THEMES = ['auto', 'cyan', 'green', 'purple', 'red', 'amber'];
 const mergeUi = u => { u = u || {}; return { reduceMotion: !!u.reduceMotion, cardFx: u.cardFx !== false, headset: ['white', 'bw', 'black'].includes(u.headset) ? u.headset : 'white',
-  theme: UI_THEMES.includes(u.theme) ? u.theme : 'auto', spectrum: u.spectrum !== false, uiSounds: u.uiSounds !== false, presetWash: u.presetWash !== false }; };
+  theme: UI_THEMES.includes(u.theme) ? u.theme : 'auto', style: ['amoled', 'glass', 'neon', 'paper'].includes(u.style) ? u.style : 'amoled', lang: ['pt', 'en', 'es'].includes(u.lang) ? u.lang : 'pt', spectrum: u.spectrum !== false, uiSounds: u.uiSounds !== false, presetWash: u.presetWash !== false, view3d: u.view3d === true }; };
+// Música e vídeo: Spotify (app e web) e YouTube (web) trocam o preset sozinhos. "when": open = assim que abrir · play = só enquanto estiver tocando.
+const mergeMedia = m => { m = m || {}; const one = (x, preset, when) => ({ enabled: !(x && x.enabled === false), preset: /^[\w-]{1,40}$/.test((x && x.preset) || '') ? x.preset : preset, when: ['open', 'play'].includes(x && x.when) ? x.when : when });
+  return { enabled: m.enabled !== false, spotify: one(m.spotify, 'music', 'play'), youtube: one(m.youtube, 'movies', 'play') }; };
+// Selo de jogo ativo: ícone pequeno num canto da tela enquanto o jogo roda (ou música/vídeo, se ligado)
+const mergeBadge = b => { b = b || {}; return { enabled: b.enabled !== false, pos: POSITIONS.includes(b.pos) ? b.pos : 'bottom-left', style: ['pulse', 'blink', 'steady'].includes(b.style) ? b.style : 'pulse',
+  size: b.size === 'small' ? 'small' : 'normal', media: !!b.media }; };
+// textos do tray e das caixas de diálogo (a interface usa o tradutor do DOM)
+const I18N_MAIN = { en: require('./src/i18n-en.js'), es: require('./src/i18n-es.js') };
+const tm = s => { const d = I18N_MAIN[settings && settings.ui && settings.ui.lang]; return (d && d.D[s]) || s; };
+// Tocando agora: disco pequeno girando no canto da tela enquanto o Spotify (ou o YouTube) toca
+const mergeNp = n => { n = n || {}; return { enabled: n.enabled !== false, pos: POSITIONS.includes(n.pos) ? n.pos : 'bottom-right', size: n.size === 'small' ? 'small' : 'normal', showTitle: n.showTitle !== false, youtube: !!n.youtube }; };
+// Microfone: o hub aplica um ajuste (ganho, corte de graves, presença...) ao microfone do Fuxi pelo Equalizer APO, sem mexer na saída de som.
+const MIC_PRESETS = {
+  natural: { gain: 0, hp: 0, warm: 0, presence: 0, air: 0, deess: 0 },
+  clear:   { gain: 3, hp: 90, warm: -2, presence: 3, air: 2, deess: -2 },
+  radio:   { gain: 3, hp: 70, warm: 3, presence: 2, air: 0, deess: -1 },
+  soft:    { gain: 2, hp: 100, warm: 0, presence: 1, air: -2, deess: -4 }
+};
+const clampN = (v, a, b) => Math.max(a, Math.min(b, Number(v) || 0));
+const mergeMic = m => { m = m || {}; const preset = ['natural', 'clear', 'radio', 'soft', 'custom'].includes(m.preset) ? m.preset : 'clear', base = MIC_PRESETS[preset] || MIC_PRESETS.clear, v = k => (preset !== 'custom' ? base[k] : m[k] !== undefined ? m[k] : base[k]);
+  return { enabled: !!m.enabled, preset, gain: Math.round(clampN(v('gain'), -12, 18) * 2) / 2, hp: [0, 60, 70, 80, 90, 100, 120, 150].includes(+v('hp')) ? +v('hp') : 0, warm: Math.round(clampN(v('warm'), -6, 6) * 2) / 2,
+    presence: Math.round(clampN(v('presence'), -6, 6) * 2) / 2, air: Math.round(clampN(v('air'), -6, 6) * 2) / 2, deess: Math.round(clampN(v('deess'), -8, 0) * 2) / 2 }; };
+const mergeUpdate = u => { u = u || {}; return { auto: u.auto !== false, lastCheck: +u.lastCheck || 0, notified: /^[\d.]{1,20}$/.test(u.notified || '') ? u.notified : '' }; };
+const mergeRemote = r => { r = r || {}; const port = +r.port; return { enabled: !!r.enabled, port: port >= 1024 && port <= 65535 ? port : 47630, token: /^[0-9a-f]{32}$/.test(r.token || '') ? r.token : require('crypto').randomBytes(16).toString('hex') }; };
 const CLOUD_TOUCH = ['off', 'light', 'medium', 'strong', 'custom'];
 const CLOUD_ANCHORS = [45, 150, 700, 2500, 5000, 10000];             // pontos (Hz) do toque personalizado: sub-grave, graves, médios, presença, claridade, "ar"
 const mergeCloud = c => {
@@ -91,7 +115,7 @@ function loadSettings() {
   settings.hotkeys = mergeHotkeys(settings.hotkeys);
   settings.closeToTray = settings.closeToTray !== false;
   if (!settings.exes || typeof settings.exes !== 'object') settings.exes = {};
-  settings.ui = mergeUi(settings.ui);
+  settings.ui = mergeUi(settings.ui); settings.media = mergeMedia(settings.media); settings.badge = mergeBadge(settings.badge); settings.nowplaying = mergeNp(settings.nowplaying); settings.micfx = mergeMic(settings.micfx); settings.update = mergeUpdate(settings.update); settings.remote = mergeRemote(settings.remote);
   settings.detectGeneric = settings.detectGeneric !== false;
   settings.audioSwitch = settings.audioSwitch !== false;
   if (!Array.isArray(settings.favorites)) settings.favorites = [];
@@ -144,11 +168,25 @@ function engineStatus() {
   if (installed) { try { linked = fs.readFileSync(path.join(APO_DIR, 'config.txt'), 'utf8').includes(APO_FILE); } catch {} }
   return { installed, linked };
 }
+function micBlock() {
+  const m = settings.micfx; if (!m || !m.enabled || !state.micApo || !state.micApo.guid) return null;
+  const f = [], gains = [], fs_ = [], qs = [], ty = [];
+  const add = (type, fc, g, q) => { f.push(`Filter: ON ${type} Fc ${fc} Hz${type === 'HPQ' ? '' : ` Gain ${g.toFixed(1)} dB`} Q ${q}`); if (type !== 'HPQ') { fs_.push(fc); gains.push(g); qs.push(q); ty.push(type); } };
+  if (m.hp > 0) add('HPQ', m.hp, 0, 0.707);
+  if (m.warm) add('PK', 150, m.warm, 0.8);
+  if (m.presence) add('PK', 3000, m.presence, 1.0);
+  if (m.air) add('HSC', 9000, m.air, 0.7);
+  if (m.deess) add('PK', 7000, m.deess, 3.0);
+  const pre = Math.max(-30, Math.min(18, m.gain));                       // o ganho é o que você escolhe; filtros altos + ganho alto podem distorcer
+  return [`If: sizeof(regexSearch("capture", stage)) > 0 and sizeof(regexSearch("${state.micApo.guid.toLowerCase()}", tolower(deviceGuid))) > 0`, `Preamp: ${pre.toFixed(1)} dB`, ...f, 'EndIf:'];
+}
 function buildConfig(p, preampOverride) {
   // preamp pelo pico REAL da curva (faixas vizinhas se somam), não só pelo maior ganho
   const pre = preampOverride !== undefined ? preampOverride : EQMath.preamp(p.f, p.eq, p.q, p.t);
   const lines = [`Preamp: ${pre.toFixed(1)} dB`];
   p.eq.forEach((g, i) => lines.push(`Filter ${i + 1}: ON ${(p.t && p.t[i]) || 'PK'} Fc ${p.f[i]} Hz Gain ${g.toFixed(1)} dB Q ${p.q[i]}`));
+  const mb = micBlock();
+  if (mb) return ['If: sizeof(regexSearch("capture", stage)) == 0', ...lines, 'EndIf:', ...mb].join('\r\n') + '\r\n';       // a curva de saída não vale para o microfone
   return lines.join('\r\n') + '\r\n';
 }
 // "Toque cloud": o áudio de streaming é comprimido (Opus) e perde graves profundos e brilho nos agudos. Em sessão cloud o hub ajusta o preset
@@ -208,7 +246,9 @@ $a = Get-PnpDevice -PresentOnly -Class AudioEndpoint -ErrorAction SilentlyContin
 $ep = Get-PnpDevice -PresentOnly -Class AudioEndpoint -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -match 'Fuxi' -and $_.FriendlyName -notmatch 'Microphone' } | Select-Object -First 1 -ExpandProperty InstanceId
 $epGuid = if ($ep -match '\\.\\{([0-9A-Fa-f-]{36})\\}$') { $Matches[1] } else { '' }
 $apo = @(Get-ChildItem 'HKLM:\\SOFTWARE\\EqualizerAPO\\Child APOs' -ErrorAction SilentlyContinue | ForEach-Object { $_.PSChildName })
-@{ fuxi = [bool]$u; audio = @($a); epGuid = $epGuid; apo = $apo } | ConvertTo-Json -Compress
+$mic = Get-PnpDevice -PresentOnly -Class AudioEndpoint -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -match 'Fuxi' -and $_.FriendlyName -match 'Microphone|Microfone' } | Select-Object -First 1
+$micGuid = if ($mic.InstanceId -match '\\.\\{([0-9A-Fa-f-]{36})\\}$') { $Matches[1] } else { '' }
+@{ fuxi = [bool]$u; audio = @($a); epGuid = $epGuid; apo = $apo; micGuid = $micGuid; micName = [string]$mic.FriendlyName } | ConvertTo-Json -Compress
 `;
 // Saída de som: ao ligar o Fuxi ele vira a saída padrão do Windows; ao desligar, volta a que estava antes.
 let fuxiEp = null;
@@ -251,6 +291,8 @@ function pollDevice() {
       lastKnown = known;
       if (JSON.stringify(next) !== JSON.stringify(state.device)) { state.device = next; changed = true; }
       if (JSON.stringify(reg) !== JSON.stringify(state.apo)) { state.apo = reg; changed = true; }
+      const mg = String(r.micGuid || '').toLowerCase(), micApo = { guid: mg, name: r.micName || '', registered: !!mg && apo.some(n => n.includes(mg)) };
+      if (JSON.stringify(micApo) !== JSON.stringify(state.micApo)) { const had = state.micApo && state.micApo.guid; state.micApo = micApo; changed = true; if (settings.micfx.enabled && had !== mg) setTimeout(refreshEngineFile, 300); }
       if (changed) push();
     } catch {}
   });
@@ -332,7 +374,7 @@ ipcMain.handle('open-data-folder', () => shell.openPath(app.getPath('userData'))
 // ---------- Backup e restauração ----------
 // O backup guarda tudo que é seu: presets (editados e criados), preset por jogo, avisos, atalhos, abertura, favoritos, estatísticas e programas vinculados.
 let lastBackup = null;
-const BACKUP_KEYS = ['auto', 'overrides', 'manual', 'custom', 'assign', 'notify', 'hotkeys', 'closeToTray', 'intro', 'exes', 'favorites', 'stats', 'ui', 'detectGeneric', 'audioSwitch', 'micVol', 'startup', 'cloud', 'rules', 'rulesEnabled', 'surround'];
+const BACKUP_KEYS = ['auto', 'overrides', 'manual', 'custom', 'assign', 'notify', 'hotkeys', 'closeToTray', 'intro', 'exes', 'favorites', 'stats', 'ui', 'detectGeneric', 'audioSwitch', 'micVol', 'startup', 'cloud', 'media', 'badge', 'nowplaying', 'micfx', 'rules', 'rulesEnabled', 'surround'];
 const ID_OK = /^[\w-]{1,40}$/;
 const makeBackup = () => { const s = {}; for (const k of BACKUP_KEYS) if (k in settings) s[k] = settings[k]; return { app: 'fuxi-hub', version: app.getVersion(), exportedAt: new Date().toISOString(), settings: s }; };
 const backupDir = () => { const d = path.join(app.getPath('userData'), 'backups'); fs.mkdirSync(d, { recursive: true }); return d; };
@@ -361,6 +403,10 @@ function applyBackup(b) {                                                       
   if (isObj(s.intro)) next.intro = mergeIntro(s.intro);
   if (isObj(s.startup)) next.startup = mergeStartup(s.startup);
   if (isObj(s.cloud)) next.cloud = mergeCloud(s.cloud);
+  if (isObj(s.media)) next.media = mergeMedia(s.media);
+  if (isObj(s.badge)) next.badge = mergeBadge(s.badge);
+  if (isObj(s.nowplaying)) next.nowplaying = mergeNp(s.nowplaying);
+  if (isObj(s.micfx)) next.micfx = mergeMic(s.micfx);
   if (isObj(s.surround)) next.surround = mergeSurround(s.surround);
   if (Array.isArray(s.rules)) next.rules = mergeRules(s.rules);
   if (typeof s.rulesEnabled === 'boolean') next.rulesEnabled = s.rulesEnabled;
@@ -390,7 +436,7 @@ ipcMain.handle('backup-import', async (_, fromAuto) => {
   }
   let b; try { if (fs.statSync(file).size > 3 * 1024 * 1024) return false; b = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return false; }
   if (!b || b.app !== 'fuxi-hub') return false;
-  const c = await dialog.showMessageBox(win, { type: 'question', buttons: ['Restaurar', 'Cancelar'], defaultId: 1, cancelId: 1, title: 'Restaurar backup', message: 'Substituir suas configurações atuais por este backup?', detail: 'Presets, atalhos, avisos, favoritos e o resto voltam ao que estava no arquivo' + (b.exportedAt ? ' (' + String(b.exportedAt).slice(0, 10) + ')' : '') + '.' });
+  const c = await dialog.showMessageBox(win, { type: 'question', buttons: [tm('Restaurar'), tm('Cancelar')], defaultId: 1, cancelId: 1, title: tm('Restaurar backup'), message: tm('Substituir suas configurações atuais por este backup?'), detail: 'Presets, atalhos, avisos, favoritos e o resto voltam ao que estava no arquivo' + (b.exportedAt ? ' (' + String(b.exportedAt).slice(0, 10) + ')' : '') + '.' });
   if (c.response !== 0) return null;
   return applyBackup(b);
 });
@@ -469,6 +515,7 @@ const SVC_LABEL = { xcloud: 'Xbox Cloud Gaming', gfn: 'GeForce NOW' };
 // A extensão (Edge/Chrome/Brave) lê a página do xCloud / GeForce NOW e avisa o hub por um servidor LOCAL (127.0.0.1, só esta máquina), com um token secreto.
 // Mais preciso que o título da janela. Cada aba manda um sinal a cada ~4 s; sem sinal por 15 s, a sessão é considerada encerrada.
 const EXT_PORTS = [47615, 47616, 47617, 47618, 47619];
+const extMedia = new Map();                                          // abas de Spotify/YouTube da extensão
 const extTabs = new Map();                                            // tabKey -> {svc, game, title, state, url, seen}
 let extServer = null, extPort = 0, extLastPing = 0;
 const extFresh = () => { const now = Date.now(); for (const [k, v] of extTabs) if (now - v.seen > 15000) extTabs.delete(k); return [...extTabs.values()]; };
@@ -490,6 +537,20 @@ function startExtServer() {
       if (!okOrigin) { res.writeHead(403, h); return res.end('{}'); }
       if (req.method === 'OPTIONS') { res.writeHead(204, h); return res.end(); }
       if (req.method === 'GET' && req.url === '/ping') { extLastPing = Date.now(); push(); res.writeHead(200, h); return res.end(JSON.stringify({ app: 'fuxi-hub' })); }
+      if (req.method === 'POST' && req.url === '/media') {                                         // Spotify / YouTube na web (extensão)
+        if (req.headers['x-fuxi-token'] !== settings.cloud.ext.token) { res.writeHead(401, h); return res.end('{}'); }
+        let body = ''; req.on('data', d => { body += d; if (body.length > 4096) req.destroy(); });
+        req.on('end', () => {
+          try {
+            const b = JSON.parse(body), site = b.site === 'spotify' ? 'spotify' : b.site === 'youtube' ? 'youtube' : null, key = String(b.tab || '0').slice(0, 24);
+            if (!site) throw 0; extLastPing = Date.now();
+            if (b.state === 'closed') extMedia.delete(site + key);
+            else extMedia.set(site + key, { site, state: b.state === 'playing' ? 'playing' : 'open', title: String(b.title || '').slice(0, 120), track: String(b.track || '').slice(0, 120), artist: String(b.artist || '').slice(0, 120), art: /^https:\/\/[\w.\-\/%?=&:+~]{4,290}$/.test(b.art || '') ? b.art : '', seen: Date.now() });
+            res.writeHead(200, h); res.end('{"ok":true}'); pollGames();
+          } catch { res.writeHead(400, h); res.end('{}'); }
+        });
+        return;
+      }
       if (req.method === 'POST' && req.url === '/cloud') {
         if (req.headers['x-fuxi-token'] !== settings.cloud.ext.token) { res.writeHead(401, h); return res.end('{}'); }
         let body = ''; req.on('data', d => { body += d; if (body.length > 8192) req.destroy(); });
@@ -550,6 +611,164 @@ ipcMain.handle('cloud-manual', (_, a) => {
   manualCloud = { svc: a.svc, id: g.id, name: g.name, since: Date.now(), sawNative: false };
   push(); pollGames(); return true;
 });
+// ---------- Controle pelo celular ----------
+// Servidor local na SUA rede Wi-Fi (desligado por padrão). O celular abre um link com um código secreto (QR code) e controla preset, volume e microfone.
+// Quem tiver o link na mesma rede pode controlar o hub; "Novo código" invalida o link antigo.
+const os = require('os');
+let remoteSrv = null, remotePort = 0, remoteVolCache = { t: 0, v: null };
+const remoteSeen = new Map(), remoteHits = new Map();
+function lanIps() {
+  const out = [];
+  for (const list of Object.values(os.networkInterfaces())) for (const i of list || []) if (i.family === 'IPv4' && !i.internal) out.push(i.address);
+  const pri = a => (/^192\.168\./.test(a) ? 0 : /^10\./.test(a) ? 1 : /^172\.(1[6-9]|2\d|3[01])\./.test(a) ? 2 : 3);
+  return out.sort((a, b) => pri(a) - pri(b));
+}
+const remoteUrls = () => (remoteSrv ? lanIps().map(ip => `http://${ip}:${remotePort}/?t=${settings.remote.token}`) : []);
+function tokenOk(t) { const a = Buffer.from(String(t || '')), b = Buffer.from(settings.remote.token); return a.length === b.length && require('crypto').timingSafeEqual(a, b); }
+async function remoteState() {
+  if (Date.now() - remoteVolCache.t > 1500) { const r = await run('audiohelper.exe', ['list']); try { const j = JSON.parse(r.out); remoteVolCache = { t: Date.now(), v: j.master || null }; } catch {} }
+  const m = await micState(), np = (typeof npData === 'function') ? npData() : null, g = state.game ? findProfile(state.game) : null;
+  return { version: app.getVersion(), presets: cyclable().map(p => ({ id: p.id, name: p.name, color: p.color })), active: state.active, game: g ? g.name : '', gameColor: g ? g.color : '',
+    volume: remoteVolCache.v ? Math.round(remoteVolCache.v.volume * 100) : null, mute: remoteVolCache.v ? !!remoteVolCache.v.mute : false, micMute: m ? !!m.mute : null, bypass: !!state.bypass, auto: !!settings.auto,
+    now: np ? { title: np.title, artist: np.artist, state: np.state } : null };
+}
+function startRemote() {
+  if (remoteSrv) return; const http = require('http');
+  const ports = [settings.remote.port, ...Array.from({ length: 8 }, (_, i) => settings.remote.port + 1 + i)];
+  const tryPort = i => {
+    if (i >= ports.length) return;
+    const srv = http.createServer(async (req, res) => {
+      const ip = String(req.socket.remoteAddress || '').replace('::ffff:', ''), now = Date.now(), url = new URL(req.url, 'http://x');
+      const hits = (remoteHits.get(ip) || []).filter(x => now - x < 1000); hits.push(now); remoteHits.set(ip, hits);
+      if (hits.length > 30) { res.writeHead(429); return res.end(); }
+      const send = (code, body, type = 'application/json') => { res.writeHead(code, { 'Content-Type': type + '; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(typeof body === 'string' ? body : JSON.stringify(body)); };
+      try {
+        if (req.method === 'GET' && url.pathname === '/') {
+          if (!tokenOk(url.searchParams.get('t'))) return send(403, '<meta name=viewport content="width=device-width"><body style="background:#000;color:#aaa;font:16px sans-serif;padding:32px">Abra o link do QR code que aparece no Fuxi Hub (Configurações → Celular).', 'text/html');
+          remoteSeen.set(ip, { ts: now, ua: String(req.headers['user-agent'] || '').slice(0, 80) });
+          return send(200, fs.readFileSync(path.join(__dirname, 'src', 'remote.html'), 'utf8'), 'text/html');
+        }
+        if (!url.pathname.startsWith('/api/') || !tokenOk(req.headers['x-fuxi-token'])) return send(401, { error: 'unauthorized' });
+        remoteSeen.set(ip, { ts: now, ua: String(req.headers['user-agent'] || '').slice(0, 80) });
+        if (req.method === 'GET' && url.pathname === '/api/state') return send(200, await remoteState());
+        if (req.method !== 'POST') return send(405, {});
+        let body = ''; await new Promise(r => { req.on('data', d => { body += d; if (body.length > 2048) req.destroy(); }); req.on('end', r); });
+        const b = JSON.parse(body || '{}');
+        switch (url.pathname) {
+          case '/api/preset': if (!cyclable().some(p => p.id === b.id)) return send(400, {}); setPreset(b.id); break;
+          case '/api/volume': await run('audiohelper.exe', ['master', String(Math.max(0, Math.min(100, Math.round(+b.v || 0))))]); remoteVolCache.t = 0; break;
+          case '/api/mute': await run('audiohelper.exe', ['mastermute', b.on ? '1' : '0']); remoteVolCache.t = 0; break;
+          case '/api/mic': await setMicMuted(!!b.mute); break;
+          case '/api/bypass': toggleBypass(); break;
+          case '/api/auto': toggleAuto(!!b.on); break;
+          default: return send(404, {});
+        }
+        return send(200, await remoteState());
+      } catch { return send(400, {}); }
+    });
+    srv.on('error', () => tryPort(i + 1));
+    srv.listen(ports[i], '0.0.0.0', () => { remoteSrv = srv; remotePort = ports[i]; push(); });
+  };
+  tryPort(0);
+}
+function stopRemote() { if (remoteSrv) { try { remoteSrv.close(); remoteSrv.closeAllConnections && remoteSrv.closeAllConnections(); } catch {} remoteSrv = null; remotePort = 0; remoteSeen.clear(); push(); } }
+ipcMain.handle('remote-set', (_, p) => { settings.remote = mergeRemote({ ...settings.remote, ...(p || {}) }); saveSettings(); if (settings.remote.enabled) { if (!remoteSrv) startRemote(); } else stopRemote(); setTimeout(push, 400); return settings.remote.enabled; });
+ipcMain.handle('remote-newtoken', () => { settings.remote.token = require('crypto').randomBytes(16).toString('hex'); remoteSeen.clear(); saveSettings(); push(); return true; });
+ipcMain.handle('remote-info', () => {
+  const urls = remoteUrls(), qrcode = require('qrcode-generator');
+  let svg = '';
+  if (urls[0]) { const qr = qrcode(0, 'M'); qr.addData(urls[0]); qr.make(); const n = qr.getModuleCount(), m = 2; let d = ''; for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c + m},${r + m}h1v1h-1z`; svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n + m * 2} ${n + m * 2}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#000"/></svg>`; }
+  const clients = [...remoteSeen.values()].filter(c => Date.now() - c.ts < 30000).length;
+  return { enabled: !!remoteSrv, urls, svg, clients, port: remotePort };
+});
+app.on('before-quit', stopRemote);
+
+// ---------- Atualização automática ----------
+// Consulta a última versão publicada no GitHub, baixa o instalador em segundo plano, confere o SHA-256 que a release informa e instala quando você aceitar.
+const UPDATE_REPO = 'BIELZINinn/fuxi-hub';
+const UPDATE_API = (!app.isPackaged && process.env.FUXI_UPDATE_API) || `https://api.github.com/repos/${UPDATE_REPO}/releases/latest`;      // o desvio só existe fora do app instalado (testes)
+const verNum = v => String(v || '').replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+const isNewer = (a, b) => { const x = verNum(a), y = verNum(b); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+let updating = false, updateFile = null;
+const setUpd = o => { state.update = { ...(state.update || {}), ...o }; push(); };
+async function checkUpdate(manual) {
+  if (updating) return; updating = true;
+  try {
+    setUpd({ status: 'checking', error: '' });
+    const res = await net.fetch(UPDATE_API, { headers: { 'User-Agent': 'FuxiHub-Updater', Accept: 'application/vnd.github+json' } });
+    if (!res.ok) throw new Error('GitHub respondeu ' + res.status);
+    const rel = await res.json(), ver = String(rel.tag_name || '').replace(/^v/i, ''), cur = app.getVersion();
+    settings.update.lastCheck = Date.now(); saveSettings();
+    if (!ver || !isNewer(ver, cur)) { setUpd({ status: 'uptodate', version: cur, checkedAt: Date.now() }); return; }
+    const asset = (rel.assets || []).find(a => /^Fuxi[. ]Hub[. ]Setup.*\.exe$/i.test(a.name)), sha = ((rel.body || '').match(/\b([A-Fa-f0-9]{64})\b/) || [])[1];
+    const info = { version: ver, notes: String(rel.body || '').slice(0, 1200), page: rel.html_url, size: asset ? asset.size : 0, sha: sha ? sha.toLowerCase() : '', url: asset ? asset.browser_download_url : '', checkedAt: Date.now() };
+    setUpd({ status: 'available', ...info });
+    if (settings.update.notified !== ver) { settings.update.notified = ver; saveSettings(); notify('info', { id: 'update', title: tm('Nova versão disponível') + ' · ' + ver, body: tm('Veja em Configurações → Sobre.'), icon: 'info', color: '#2ef2ff' }, true); }
+    if ((settings.update.auto || manual) && info.url && info.sha) await downloadUpdate();
+  } catch (e) { setUpd({ status: 'error', error: String(e.message || e).slice(0, 160) }); }
+  finally { updating = false; }
+}
+async function downloadUpdate() {
+  const u = state.update; if (!u || !u.url || !u.sha) return;
+  const dir = path.join(app.getPath('userData'), 'updates'); fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, `FuxiHub-Setup-${u.version}.exe`), crypto = require('crypto');
+  const okFile = f => { try { return crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex') === u.sha; } catch { return false; } };
+  if (fs.existsSync(file) && okFile(file)) { updateFile = file; setUpd({ status: 'ready', progress: 1 }); return; }
+  setUpd({ status: 'downloading', progress: 0 });
+  const res = await net.fetch(u.url, { headers: { 'User-Agent': 'FuxiHub-Updater' } });
+  if (!res.ok || !res.body) throw new Error('Download falhou (' + res.status + ')');
+  const total = +res.headers.get('content-length') || u.size || 0, out = fs.createWriteStream(file + '.part'), reader = res.body.getReader();
+  let got = 0, lastPush = 0;
+  for (;;) {
+    const { done, value } = await reader.read(); if (done) break;
+    out.write(Buffer.from(value)); got += value.length;
+    if (total && Date.now() - lastPush > 400) { lastPush = Date.now(); setUpd({ progress: Math.min(.99, got / total) }); }
+  }
+  await new Promise(r => out.end(r));
+  fs.renameSync(file + '.part', file);
+  if (!okFile(file)) { try { fs.unlinkSync(file); } catch {} throw new Error('O arquivo baixado não confere com o SHA-256 da release'); }
+  updateFile = file; setUpd({ status: 'ready', progress: 1 });
+}
+ipcMain.handle('update-check', async () => { await checkUpdate(true); return state.update; });
+ipcMain.handle('update-install', () => {
+  if (!updateFile || !fs.existsSync(updateFile) || !app.isPackaged) return false;                       // instalar só faz sentido no app instalado
+  require('child_process').spawn(updateFile, [], { detached: true, stdio: 'ignore' }).unref();
+  setTimeout(() => app.quit(), 400); return true;
+});
+ipcMain.handle('set-update', (_, p) => { settings.update = mergeUpdate({ ...settings.update, ...(p || {}) }); saveSettings(); push(); return settings.update; });
+ipcMain.handle('open-release-page', () => { const u = state.update && state.update.page; if (u && /^https:\/\/github\.com\//.test(u)) shell.openExternal(u); });
+setTimeout(() => { if (!process.env.FUXI_SHOTS || process.env.FUXI_UPDATE_API) checkUpdate(false); }, 20000);
+setInterval(() => { if (!process.env.FUXI_SHOTS && Date.now() - settings.update.lastCheck > 6 * 3600e3) checkUpdate(false); }, 30 * 60e3);
+
+// ---------- Música e vídeo ----------
+const MEDIA_LABEL = { spotify: 'Spotify', youtube: 'YouTube' };
+const SPOTIFY_WEB = /spotify/i, YT_TITLE = /(?:^|\s[-–|•]\s)YouTube(?!\s*(?:Music|Studio|Kids|TV))\s*$|^YouTube$/i;
+const BROWSER_PROCS = /^(msedge|chrome|firefox|brave|opera|vivaldi|arc|opera_gx)$/i;
+async function detectMedia(wins, names) {
+  const m = settings.media; if (!m.enabled) { state.media = null; return null; }
+  const now = Date.now(), found = { spotify: null, youtube: null };
+  const put = (site, state, via, meta) => { const c = found[site]; if (!c || (state === 'playing' && c.state !== 'playing')) found[site] = { state, via, ...(meta || {}) }; };
+  for (const [k, v] of extMedia) { if (now - v.seen > 15000) extMedia.delete(k); else put(v.site, v.state, 'extensão', { title: v.track, artist: v.artist, art: v.art }); }
+  const spApp = names.has('spotify.exe');
+  const webSp = wins.some(w => BROWSER_PROCS.test(w.name) && SPOTIFY_WEB.test(w.title) && !NOT_CLOUD.test(w.title.replace(/spotify/ig, '')));
+  const webYt = wins.some(w => BROWSER_PROCS.test(w.name) && YT_TITLE.test(w.title));
+  let active = null;                                                                  // quem está com som saindo agora (só consulta se precisar)
+  const needAudio = (m.spotify.enabled && m.spotify.when === 'play' && (spApp || webSp) && !found.spotify) || (m.youtube.enabled && m.youtube.when === 'play' && webYt && !found.youtube);
+  if (needAudio) { const r = await run('audiohelper.exe', ['list']); try { active = new Set((JSON.parse(r.out).apps || JSON.parse(r.out)).filter(a => a.active).map(a => String(a.name).toLowerCase().replace(/\.exe$/, ''))); } catch { active = new Set(); } }
+  const browserActive = active ? [...active].some(n => BROWSER_PROCS.test(n)) : false;
+  const spWin = wins.find(w => /^spotify$/i.test(w.name) && w.title && !/^(spotify( (free|premium))?|spotify$|chrome|gdi\+|default ime|msctfime)/i.test(w.title.trim()) && / - /.test(w.title));      // no app do Spotify, a janela mostra "Artista - Música" enquanto toca
+  const spMeta = spWin ? (() => { const i = spWin.title.indexOf(' - '); return { artist: spWin.title.slice(0, i).trim(), title: spWin.title.slice(i + 3).trim() }; })() : null;
+  if (spApp) put('spotify', spMeta ? 'playing' : (active && active.has('spotify') ? 'playing' : 'open'), 'app', spMeta || {});
+  if (webSp && !found.spotify) put('spotify', browserActive ? 'playing' : 'open', 'navegador');
+  if (webYt && !found.youtube) put('youtube', browserActive ? 'playing' : 'open', 'navegador');
+  const ok = site => { const c = found[site], cfg = m[site]; return cfg.enabled && c && (cfg.when === 'open' || c.state === 'playing') && findProfile(cfg.preset) ? c : null; };
+  const sp = ok('spotify'), yt = ok('youtube');
+  const pick = yt && (!sp || yt.state === 'playing' || sp.state !== 'playing') ? 'youtube' : sp ? 'spotify' : null;      // vídeo ganha do áudio em caso de empate
+  state.media = { spotify: found.spotify, youtube: found.youtube, active: pick };
+  return pick ? { id: 'media-' + pick, exe: MEDIA_LABEL[pick], label: MEDIA_LABEL[pick], preset: m[pick].preset, media: true } : null;
+}
+ipcMain.handle('set-media', (_, p) => { const c = settings.media, n = p || {}; settings.media = mergeMedia({ ...c, ...n, spotify: { ...c.spotify, ...(n.spotify || {}) }, youtube: { ...c.youtube, ...(n.youtube || {}) } }); saveSettings(); push(); pollGames(); return settings.media; });
+
 // ---------- Regras por programa ----------
 // Enquanto nenhum jogo está aberto, se um programa da regra estiver rodando, aplica o preset dela (ex.: Spotify -> Música). Quando fecha, volta ao preset de antes.
 let curRule = null;
@@ -559,7 +778,7 @@ function detectRule(names) {
 }
 function notifyRule(r) {
   const p = findProfile(r.preset); if (!p) return;
-  notify('preset', { id: 'rule', title: r.label || r.exe.replace(/\.exe$/i, ''), body: `Regra: preset ${p.name}`, icon: 'preset', color: p.color, eq: eqOf(p) });
+  notify('preset', { id: 'rule', title: r.label || r.exe.replace(/\.exe$/i, ''), body: r.media ? `Preset ${p.name}` : `Regra: preset ${p.name}`, icon: 'preset', color: p.color, eq: eqOf(p) });
 }
 const restoreTarget = () => (curRule && findProfile(curRule.preset) ? curRule.preset : null) || settings.manual || 'default';
 
@@ -583,14 +802,15 @@ const scan = args => new Promise(res => execFile(native('procscan.exe'), args, {
 const parseWins = out => (out || '').split('\n').map(l => l.split('\t')).filter(a => a.length >= 3).map(a => ({ pid: +a[0], name: a[1], title: (a[2] || '').trim() }));
 async function pollGames() {
   markToday();
-  const [po, wo] = await Promise.all([scan([]), settings.cloud.enabled ? scan(['windows']) : Promise.resolve('')]);
+  const [po, wo] = await Promise.all([scan([]), (settings.cloud.enabled || settings.media.enabled) ? scan(['windows']) : Promise.resolve('')]);
   if (!po) return;
   const procs = po.split('\n').map(l => l.split('\t')).filter(a => a.length >= 4).map(a => ({ pid: +a[0], mb: +a[1] || 0, name: a[2], path: (a[3] || '').trim() }));
   const names = new Set(procs.map(p => p.name.toLowerCase() + '.exe'));
-  const rule = detectRule(names), ruleChanged = (rule ? rule.id : null) !== (curRule ? curRule.id : null);
+  const winsAll = parseWins(wo);
+  const userRule = detectRule(names), mediaRule = await detectMedia(winsAll, names), rule = userRule || mediaRule, ruleChanged = (rule ? rule.id : null) !== (curRule ? curRule.id : null);
   curRule = rule; state.rule = rule ? rule.id : null;
   let id = detectGame(procs), cloud = null;
-  const wins = parseWins(wo), cc = settings.cloud;
+  const wins = winsAll, cc = settings.cloud;
   const cands = cc.enabled ? [detectExt(), cc.ext.windowFallback ? detectCloud(wins) : null, detectNative(wins, names)].filter(Boolean) : [];
   if (manualCloud) {                                                               // sessão manual: termina se você encerrar, se o app nativo fechar ou depois de 8 h
     if (nativeRunning(manualCloud.svc, names)) manualCloud.sawNative = true;
@@ -601,6 +821,7 @@ async function pollGames() {
   state.cloudApps = { xcloud: nativeRunning('xcloud', names), gfn: nativeRunning('gfn', names), gfnStreaming: names.has('geforcenowstreamer.exe') };      // sessão cloud visível (com ou sem jogo identificado)
   state.cloudSeen = seen ? { svc: seen.svc, label: SVC_LABEL[seen.svc], name: seen.name, title: seen.title, ext: !!seen.ext, native: !!seen.native, manual: !!seen.manual } : null;
   state.extLive = extFresh().length > 0 ? Date.now() : 0;
+  try { updateNowPlaying(); } catch {}
   if (!id && seen && seen.name) { id = matchGameId(seen.name); if (id) cloud = seen; }
   handleDetection(id, cloud);
   if (ruleChanged && !state.game) {                                              // regra liga/desliga só quando não há jogo aberto
@@ -609,9 +830,9 @@ async function pollGames() {
   }
 }
 
-function snapshot() { return { ...state, auto: settings.auto, notify: settings.notify, hotkeys: settings.hotkeys, hotkeyErrors, closeToTray: settings.closeToTray, autostart, intro: settings.intro, startup: settings.startup, favorites: settings.favorites, stats: settings.stats, ui: settings.ui, detectGeneric: settings.detectGeneric, audioSwitch: settings.audioSwitch, lastBackup, surroundCfg: settings.surround, hesuvi: hesuviInfo(), cloudCfg: settings.cloud, tutorial: settings.tutorial, ach: settings.ach, achSeeded: settings.achSeeded, usageDays: settings.usage.days, rules: settings.rules, rulesEnabled: settings.rulesEnabled, version: app.getVersion(), dataDir: app.getPath('userData'),
+function snapshot() { return { ...state, auto: settings.auto, notify: settings.notify, hotkeys: settings.hotkeys, hotkeyErrors, closeToTray: settings.closeToTray, autostart, intro: settings.intro, startup: settings.startup, favorites: settings.favorites, stats: settings.stats, ui: settings.ui, detectGeneric: settings.detectGeneric, audioSwitch: settings.audioSwitch, lastBackup, surroundCfg: settings.surround, hesuvi: hesuviInfo(), cloudCfg: settings.cloud, mediaCfg: settings.media, badgeCfg: settings.badge, npCfg: settings.nowplaying, packaged: app.isPackaged, remoteCfg: { enabled: settings.remote.enabled, on: !!remoteSrv }, micFx: settings.micfx, updateCfg: settings.update, update: state.update || { status: 'idle' }, micApo: state.micApo || null, tutorial: settings.tutorial, ach: settings.ach, achSeeded: settings.achSeeded, usageDays: settings.usage.days, rules: settings.rules, rulesEnabled: settings.rulesEnabled, version: app.getVersion(), dataDir: app.getPath('userData'),
   skipIntro: process.argv.includes('--hidden') || !!process.env.FUXI_SHOTS, noSound: !!process.env.FUXI_NO_SOUND,   /* início escondido (Windows) e testes não tocam a abertura */ profiles: allProfiles(), bands: BANDS, engine: { ...(state.engine || engineStatus()), registered: !!(state.apo && state.apo.fuxi), apoDevices: state.apo ? state.apo.count : 0 } }; }
-function push() { if (win && !win.isDestroyed()) win.webContents.send('state', snapshot()); if (mini && !mini.isDestroyed() && mini.isVisible()) mini.webContents.send('state', snapshot()); }
+function push() { try { updateBadge(); } catch {} if (win && !win.isDestroyed()) win.webContents.send('state', snapshot()); if (mini && !mini.isDestroyed() && mini.isVisible()) mini.webContents.send('state', snapshot()); }
 let hotkeyErrors = {};
 
 // ---------- Avisos no canto da tela ----------
@@ -640,6 +861,96 @@ function ensureOverlay() {
   overlay.loadFile(path.join(__dirname, 'src', 'toast.html'));
   return overlay;
 }
+// ---------- Selo de jogo ativo ----------
+let badgeWin = null, badgeReady = false, badgeLast = null, badgeKey = '', badgePreview = 0;
+function badgeData() {
+  const b = settings.badge; if (!b || !b.enabled) return null;
+  let g = null, cloud = null, art = null, color = null, initials = '';
+  if (Date.now() < badgePreview) { g = findProfile('fortnite') || findProfile(DATA.games[0].id); cloud = null; }
+  else if (state.game) { g = findProfile(state.game); cloud = state.cloud ? state.cloud.svc : null; }
+  if (g) return { color: g.color, art: g.iconArt || null, initials: ini(g.name), cloud };
+  if (b.media && state.rule && /^media-/.test(state.rule)) {                       // Spotify / YouTube, se você quiser o selo também para eles
+    const site = state.rule.slice(6), pr = findProfile(settings.media[site] && settings.media[site].preset);
+    return { color: pr ? pr.color : '#2ef2ff', art: pathToFileURL(path.join(__dirname, 'assets', 'services', site + '-badge.png')).href, initials: site === 'spotify' ? 'SP' : 'YT', cloud: null };
+  }
+  return null;
+}
+function placeBadge() {
+  if (!badgeWin || badgeWin.isDestroyed()) return;
+  const wa = screen.getPrimaryDisplay().workArea, S = 96, pos = settings.badge.pos, m = 6;
+  badgeWin.setBounds({ x: /right$/.test(pos) ? wa.x + wa.width - S - m : wa.x + m, y: /^top/.test(pos) ? wa.y + m : wa.y + wa.height - S - m, width: S, height: S });
+}
+function ensureBadge() {
+  if (badgeWin && !badgeWin.isDestroyed()) return badgeWin;
+  badgeReady = false;
+  badgeWin = new BrowserWindow({ width: 96, height: 96, show: false, frame: false, transparent: true, resizable: false, movable: false, focusable: false, skipTaskbar: true, alwaysOnTop: true, hasShadow: false, fullscreenable: false,
+    webPreferences: { preload: path.join(__dirname, 'preload-badge.js'), contextIsolation: true } });
+  badgeWin.setAlwaysOnTop(true, 'screen-saver'); badgeWin.setIgnoreMouseEvents(true); badgeWin.setMenuBarVisibility(false); global.__badge = badgeWin;
+  badgeWin.webContents.on('did-finish-load', () => { badgeReady = true; if (badgeLast) badgeWin.webContents.send('badge', badgeLast); });
+  badgeWin.loadFile(path.join(__dirname, 'src', 'badge.html'));
+  return badgeWin;
+}
+function updateBadge() {
+  if (!settings || !settings.badge) return;
+  const d = badgeData(), b = settings.badge, key = JSON.stringify([d, b.pos, b.style, b.size, b.enabled]);
+  if (key === badgeKey) return; badgeKey = key;
+  if (!d) {
+    badgeLast = { show: false };
+    if (badgeWin && !badgeWin.isDestroyed() && badgeWin.isVisible()) { badgeWin.webContents.send('badge', badgeLast); setTimeout(() => { if (badgeWin && !badgeWin.isDestroyed() && !badgeData()) badgeWin.hide(); }, 900); }
+    return;
+  }
+  ensureBadge(); placeBadge();
+  badgeLast = { show: true, ...d, style: b.style, size: b.size };
+  if (badgeReady) badgeWin.webContents.send('badge', badgeLast);
+  if (!badgeWin.isVisible()) badgeWin.showInactive();
+}
+ipcMain.handle('set-badge', (_, p) => { settings.badge = mergeBadge({ ...settings.badge, ...(p || {}) }); saveSettings(); badgeKey = ''; push(); return settings.badge; });
+ipcMain.handle('test-badge', () => { badgePreview = Date.now() + 7000; badgeKey = ''; push(); setTimeout(() => { badgeKey = ''; push(); }, 7200); return true; });
+// ---------- Tocando agora ----------
+let npWin = null, npReady = false, npLast = null, npSig = '', npPreview = null;
+function npData() {
+  const c = settings.nowplaying; if (!c || !c.enabled) return null;
+  if (npPreview && Date.now() < npPreview.until) return { site: 'spotify', ...npPreview.track };
+  const m = state.media; if (!m) return null;
+  const opts = ['spotify', c.youtube ? 'youtube' : null].filter(Boolean).map(s => m[s] && m[s].title ? { site: s, state: m[s].state === 'playing' ? 'playing' : 'paused', title: m[s].title, artist: m[s].artist || '', art: m[s].art || '' } : null).filter(Boolean);
+  return opts.find(o => o.state === 'playing') || opts[0] || null;
+}
+function placeNp() {
+  if (!npWin || npWin.isDestroyed()) return;
+  const wa = screen.getPrimaryDisplay().workArea, W = 380, H = 110, pos = settings.nowplaying.pos, m = 8;
+  npWin.setBounds({ x: /right$/.test(pos) ? wa.x + wa.width - W - m : wa.x + m, y: /^top/.test(pos) ? wa.y + m : wa.y + wa.height - H - m, width: W, height: H });
+}
+function ensureNp() {
+  if (npWin && !npWin.isDestroyed()) return npWin;
+  npReady = false;
+  npWin = new BrowserWindow({ width: 380, height: 110, show: false, frame: false, transparent: true, resizable: false, movable: false, focusable: false, skipTaskbar: true, alwaysOnTop: true, hasShadow: false, fullscreenable: false,
+    webPreferences: { preload: path.join(__dirname, 'preload-np.js'), contextIsolation: true } });
+  npWin.setAlwaysOnTop(true, 'screen-saver'); npWin.setIgnoreMouseEvents(true); npWin.setMenuBarVisibility(false); global.__np = npWin;
+  npWin.webContents.on('did-finish-load', () => { npReady = true; if (npLast) npWin.webContents.send('np', npLast); });
+  npWin.loadFile(path.join(__dirname, 'src', 'np.html'));
+  return npWin;
+}
+function updateNowPlaying() {
+  if (!settings || !settings.nowplaying) return;
+  const d = npData(), c = settings.nowplaying, sig = JSON.stringify([d, c.pos, c.size, c.showTitle, settings.ui.lang]);
+  if (sig === npSig) return; npSig = sig;
+  if (!d) {
+    npLast = { show: false };
+    if (npWin && !npWin.isDestroyed() && npWin.isVisible()) { npWin.webContents.send('np', npLast); setTimeout(() => { if (npWin && !npWin.isDestroyed() && !npData()) npWin.hide(); }, 900); }
+    return;
+  }
+  ensureNp(); placeNp();
+  npLast = { show: true, ...d, pos: c.pos, size: c.size, showTitle: c.showTitle, lang: settings.ui.lang };
+  if (npReady) npWin.webContents.send('np', npLast);
+  if (!npWin.isVisible()) npWin.showInactive();
+}
+ipcMain.handle('set-nowplaying', (_, p) => { settings.nowplaying = mergeNp({ ...settings.nowplaying, ...(p || {}) }); saveSettings(); npSig = ''; updateNowPlaying(); push(); return settings.nowplaying; });
+ipcMain.handle('test-np', () => {                                                    // prévia: duas músicas de exemplo, trocando a cada 4 s
+  const T = [{ title: 'Midnight City', artist: 'M83' }, { title: 'Blinding Lights', artist: 'The Weeknd' }, { title: 'Levitating', artist: 'Dua Lipa' }];
+  const until = Date.now() + 13000; let i = 0;
+  const step = () => { if (Date.now() >= until) { npPreview = null; npSig = ''; updateNowPlaying(); return; } npPreview = { until, track: { state: 'playing', ...T[i++ % T.length], art: '' } }; npSig = ''; updateNowPlaying(); setTimeout(step, 4200); };
+  step(); return true;
+});
 // kind: game | gameEnd | device | preset | mic.  force = ignora as chaves de ligar/desligar (usado nos testes da tela Ajustes)
 function notify(kind, o, force) {
   const n = settings.notify;
@@ -652,7 +963,7 @@ function notify(kind, o, force) {
   const w = ensureOverlay(); placeOverlay();
   clearTimeout(overlayHideTimer);
   if (!w.isVisible()) w.showInactive();
-  if (overlayReady) w.webContents.send('toast', p); else overlayQueue.push(p);
+  p.lang = settings.ui.lang; if (overlayReady) w.webContents.send('toast', p); else overlayQueue.push(p);
 }
 ipcMain.on('toast-empty', () => { clearTimeout(overlayHideTimer); overlayHideTimer = setTimeout(() => { if (overlay && !overlay.isDestroyed()) overlay.hide(); }, 300); });
 const eqOf = p => (p ? { f: p.f, g: p.eq, q: p.q, t: p.t } : null);
@@ -853,6 +1164,17 @@ async function toggleMic() {
   notify('mic', mute ? { id: 'mic', soundKey: 'micOff', title: 'Microfone mutado', body: 'Ninguém te ouve agora', icon: 'micOff', color: '#ff4d6d' }
                      : { id: 'mic', soundKey: 'micOn', title: 'Microfone ativo', body: 'Você está no ar', icon: 'mic', color: '#5ee0a0' });
 }
+// reescreve o arquivo do motor com o que está valendo agora (preset ativo ou som original) — usado quando o ajuste do microfone muda
+function refreshEngineFile() {
+  const eng = engineStatus(); if (!eng.installed) return;
+  if (state.bypass) { try { fs.writeFileSync(path.join(APO_DIR, APO_FILE), buildConfig({ eq: BANDS.map(() => 0), f: BANDS.slice(), q: BANDS.map(() => EQMath.Q) }, 0)); } catch {} }
+  else applyEq(state.active);
+}
+ipcMain.handle('micfx-set', (_, p) => {
+  const c = settings.micfx, n = p || {}, preset = n.preset || c.preset;
+  settings.micfx = mergeMic(n.preset && n.preset !== 'custom' ? { ...c, ...n, preset } : { ...c, ...n, preset: n.preset || (['gain', 'hp', 'warm', 'presence', 'air', 'deess'].some(k => k in n) ? 'custom' : c.preset) });
+  saveSettings(); refreshEngineFile(); push(); return settings.micfx;
+});
 function toggleBypass() {                                      // liga/desliga o equalizador sem mexer no preset salvo
   if (state.bypass) {
     applyEq(state.active); const p = findProfile(state.active);
@@ -917,16 +1239,16 @@ function trayIcon() {                                          // fone ciano des
 async function popTrayMenu() {
   const m = await micState(), p = findProfile(state.active);
   const menu = Menu.buildFromTemplate([
-    { label: 'Abrir Fuxi Hub', click: showWin },
+    { label: tm('Abrir Fuxi Hub'), click: showWin },
     { type: 'separator' },
-    { label: 'Preset', submenu: cyclable().map(c => ({ label: c.name, type: 'radio', checked: c.id === state.active, click: () => setPreset(c.id) })) },
-    { label: 'Equalizador ligado', type: 'checkbox', checked: !state.bypass, click: toggleBypass },
-    { label: 'Microfone mutado', type: 'checkbox', checked: !!(m && m.mute), enabled: !!m, click: toggleMic },
+    { label: tm('Preset'), submenu: cyclable().map(c => ({ label: tm(c.name), type: 'radio', checked: c.id === state.active, click: () => setPreset(c.id) })) },
+    { label: tm('Equalizador ligado'), type: 'checkbox', checked: !state.bypass, click: toggleBypass },
+    { label: tm('Microfone mutado'), type: 'checkbox', checked: !!(m && m.mute), enabled: !!m, click: toggleMic },
     { type: 'separator' },
-    { label: 'Trocar preset ao abrir jogos', type: 'checkbox', checked: settings.auto, click: i => toggleAuto(i.checked) },
-    { label: 'Avisos na tela', type: 'checkbox', checked: settings.notify.enabled, click: i => { settings.notify = mergeNotify({ ...settings.notify, enabled: i.checked }); saveSettings(); push(); } },
+    { label: tm('Trocar preset ao abrir jogos'), type: 'checkbox', checked: settings.auto, click: i => toggleAuto(i.checked) },
+    { label: tm('Avisos na tela'), type: 'checkbox', checked: settings.notify.enabled, click: i => { settings.notify = mergeNotify({ ...settings.notify, enabled: i.checked }); saveSettings(); push(); } },
     { type: 'separator' },
-    { label: 'Sair do Fuxi Hub', click: () => app.quit() }
+    { label: tm('Sair do Fuxi Hub'), click: () => app.quit() }
   ]);
   tray.popUpContextMenu(menu);
 }
@@ -1124,7 +1446,7 @@ app.whenReady().then(() => {
   session.defaultSession.setDisplayMediaRequestHandler((req, cb) => { desktopCapturer.getSources({ types: ['screen'] }).then(s => cb({ video: s[0], audio: 'loopback' })).catch(() => cb({})); });     // áudio do sistema para o visualizador
   if (!gotLock) return;
   settingsPath = path.join(app.getPath('userData'), 'settings.json');
-  loadSettings(); saveSettings(); startExtServer();
+  loadSettings(); saveSettings(); startExtServer(); if (settings.remote.enabled) setTimeout(startRemote, 1500);
   if (!process.env.FUXI_SHOTS) autoBackup();                                  // testes não mexem na pasta de backups
   win = new BrowserWindow({
     width: 1180, height: 760, minWidth: 980, minHeight: 640,

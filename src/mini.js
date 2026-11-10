@@ -6,6 +6,7 @@
   const keep = () => hub.miniKeep();
   function render() {
     if (!S) return;
+    if (window.I18N && S.ui) I18N.setLang(S.ui.lang || 'pt');
     const p = S.profiles.find(x => x.id === S.active) || S.profiles[0], g = S.game && S.profiles.find(x => x.id === S.game), col = (g && g.color) || (p && p.color) || '#2ef2ff';
     document.documentElement.style.setProperty('--ac', col);
     $('#mName').textContent = S.game ? (S.gameName || (g && g.name) || p.name) : p.name;

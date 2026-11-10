@@ -1,0 +1,20 @@
+/* Selo de jogo ativo: um ícone pequeno e discreto num canto da tela, só para mostrar que o Fuxi Hub está trabalhando */
+html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}
+.bd{--c:#2ef2ff;--s:44px;position:absolute;left:50%;top:50%;width:var(--s);height:var(--s);margin:calc(var(--s)/-2) 0 0 calc(var(--s)/-2);opacity:0;transform:scale(.5);transition:opacity .6s,transform .7s cubic-bezier(.2,1.3,.3,1)}
+.bd.sm{--s:34px}
+.bd.on{opacity:1;transform:none}
+.core{position:absolute;inset:0;border-radius:50%;overflow:hidden;background:#07080a;border:1.5px solid var(--c);box-shadow:0 0 12px color-mix(in srgb,var(--c) 70%,transparent),0 0 2px var(--c),inset 0 0 8px rgba(0,0,0,.7);display:grid;place-items:center}
+.core img{width:100%;height:100%;object-fit:cover;display:block}
+.core span{position:absolute;font:700 calc(var(--s)*.32)/1 "Segoe UI",sans-serif;color:var(--c);letter-spacing:.04em}
+.core img[src=""],.core img:not([src]){display:none}
+.rp{position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--c);opacity:0;pointer-events:none}
+.cl{position:absolute;right:-5px;bottom:-5px;width:17px;height:17px;padding:3px;border-radius:50%;background:#07080a;border:1px solid var(--c);fill:none;stroke:var(--c);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;display:none;box-sizing:border-box}
+.bd.cloud .cl{display:block}
+/* estilos: pulso = ondas de tempos em tempos · piscar = some e volta devagar · fixo = parado */
+.bd.pulse.on .rp{animation:rip 5.5s ease-out infinite}.bd.pulse.on .r2{animation-delay:.45s}
+@keyframes rip{0%{transform:scale(1);opacity:.7}22%,100%{transform:scale(2.1);opacity:0}}
+.bd.pulse.on .core{animation:breathe 5.5s ease-in-out infinite}
+@keyframes breathe{0%,100%{box-shadow:0 0 12px color-mix(in srgb,var(--c) 70%,transparent),0 0 2px var(--c)}12%{box-shadow:0 0 22px var(--c),0 0 4px var(--c)}}
+.bd.blink.on{animation:blink 3.6s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.22}}
+body.rm *{animation:none!important}

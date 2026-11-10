@@ -26,12 +26,12 @@ module.exports = {
     const steps = JSON.parse(process.env.FUXI_STEPS || '[]');
     const lastName = steps.length ? steps[steps.length - 1][1] : '';
     steps.forEach(([t, name, js, target, delay]) => setTimeout(async () => {
-      if (js) await win.webContents.executeJavaScript(js);
+      if (js) { const r = await win.webContents.executeJavaScript(js); if (/^dump_/.test(name)) fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify(r, null, 1)); }
       setTimeout(async () => {
-        const w = target === 'ovl' ? (getOverlay && getOverlay()) : target === 'mini' ? global.__mini : win;
+        const w = target === 'ovl' ? (getOverlay && getOverlay()) : target === 'mini' ? global.__mini : target === 'badge' ? global.__badge : target === 'np' ? global.__np : win;
         if (w && !w.isDestroyed()) {
           let img = await w.webContents.capturePage();
-          if (target === 'ovl') img = flatten(img);
+          if (target === 'ovl' || target === 'badge' || target === 'np') img = flatten(img);
           fs.writeFileSync(path.join(dir, name + '.png'), img.toPNG());
         }
         if (name === lastName) app.quit();

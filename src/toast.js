@@ -188,5 +188,5 @@ function hide(w, quick) {
   clearTimeout(w._t); w.classList.remove('in'); w.classList.add('out');
   setTimeout(() => { w.remove(); if (!stack.children.length) window.toast.empty(); }, quick ? 350 : (w.classList.contains('anim-none') ? 60 : w.classList.contains('gmw') ? 1050 : 520));
 }
-window.toast.onShow(show);
+window.toast.onShow(p => { if (window.I18N && p.lang) I18N.setLang(p.lang); show(p); });
 window.toast.onClear(() => [...stack.children].forEach(w => hide(w, true)));

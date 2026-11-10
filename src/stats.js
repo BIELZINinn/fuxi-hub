@@ -33,7 +33,7 @@
   function build() {
     if (built) return; built = true;
     Q('#stBox').innerHTML = `<div class="cards">
-      <div class="stk" id="stTiles"></div>
+      <div class="sttiles" id="stTiles"></div>
       <div class="card"><h3>Atividade</h3><div id="stHeat"></div></div>
       <div class="card"><h3>Mais jogados</h3><div id="stTop"></div></div>
       <div class="card"><h3>Conquistas <span id="stAchN" class="stn"></span></h3><div class="achgrid" id="stAch"></div></div></div>`;

@@ -1,0 +1,29 @@
+/* "Tocando agora": um disco pequeno girando no canto da tela; a cada música nova ele dá uma voltinha e mostra o nome por alguns segundos */
+html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:"Segoe UI Variable","Segoe UI",system-ui,sans-serif}
+.np{--c:#1db954;--s:64px;position:absolute;inset:0;display:flex;align-items:center;padding:0 14px;opacity:0;transition:opacity .7s}
+.np.on{opacity:1}.np.sm{--s:48px}.np.right{flex-direction:row-reverse}
+.disc{position:relative;flex:none;width:var(--s);height:var(--s);transition:opacity .6s,filter .6s}
+.np.paused .disc{opacity:.5;filter:saturate(.4)}
+.pop{position:absolute;inset:0;border-radius:50%}
+.rot{position:absolute;inset:0;border-radius:50%;overflow:hidden;animation:spin 5.5s linear infinite;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--c) 85%,#000),0 4px 16px rgba(0,0,0,.6)}
+.np.paused .rot{animation-play-state:paused}
+.vinyl{position:absolute;inset:0;background:radial-gradient(circle,#000 0 20%,transparent 21%),repeating-radial-gradient(circle,#0a0a0b 0 1.6px,#17171a 1.6px 2.6px)}
+.sheen{position:absolute;inset:0;background:conic-gradient(from 20deg,transparent 0 8%,rgba(255,255,255,.28) 13%,transparent 20% 56%,rgba(255,255,255,.18) 61%,transparent 68%)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.label{position:absolute;left:50%;top:50%;width:46%;height:46%;margin:-23% 0 0 -23%;border-radius:50%;overflow:hidden;background:#000;border:1.5px solid var(--c);animation:spin 5.5s linear infinite}
+.np.paused .label{animation-play-state:paused}
+.label img{width:100%;height:100%;object-fit:cover;display:block}
+.hole{position:absolute;left:50%;top:50%;width:7%;height:7%;margin:-3.5% 0 0 -3.5%;border-radius:50%;background:#050506;box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+.glow{position:absolute;inset:-6px;border-radius:50%;box-shadow:0 0 18px color-mix(in srgb,var(--c) 55%,transparent);pointer-events:none;animation:glw 3.2s ease-in-out infinite}
+@keyframes glw{50%{opacity:.35}}
+.np.paused .glow{animation:none;opacity:.2}
+/* música nova: o disco encolhe, gira uma volta e volta com a capa nova */
+.pop.swap{animation:swap 1s cubic-bezier(.3,.8,.2,1)}
+@keyframes swap{0%{transform:scale(1) rotate(0)}38%{transform:scale(.72) rotate(220deg);opacity:.55}100%{transform:scale(1) rotate(360deg);opacity:1}}
+.pill{margin:0 14px;padding:9px 16px 10px;border-radius:18px;background:rgba(8,9,11,.93);border:1px solid color-mix(in srgb,var(--c) 45%,#1b1b20);box-shadow:0 12px 34px -12px #000,0 0 26px -12px var(--c);max-width:230px;min-width:0;opacity:0;transform:translateX(-16px) scale(.95);transition:opacity .5s,transform .6s cubic-bezier(.2,1.2,.3,1)}
+.np.right .pill{transform:translateX(16px) scale(.95)}
+.pill.on{opacity:1;transform:none}
+.pill small{display:block;font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--c);margin-bottom:3px}
+.pill b{display:block;font-size:13.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill span{display:block;font-size:11.5px;color:#a8a8b4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+body.rm *{animation:none!important}

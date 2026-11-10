@@ -3,6 +3,7 @@ let S = null, editId = 'default', draft = null, lastMode = null, page = 'home';
 
 const fmtHz = f => f >= 1000 ? (f / 1000) + 'k' : f;
 const prof = id => S.profiles.find(p => p.id === id);
+const themed = c => (S && S.ui && S.ui.theme && S.ui.theme !== 'auto' && window.Fx2 ? Fx2.accent() : c);     // cor fixa escolhida em Configurações vale para o app todo
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 2400); }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -39,15 +40,16 @@ function renderHome() {
   $('#devsub').textContent = d.known ? 'USB · conectado · reconhecido' : d.connected ? 'Fone genérico · modo compatível' : 'Conecte um fone para começar';
   const a = prof(S.active) || prof('default');
   $('#activeName').textContent = (S.game ? 'Jogando · ' : '') + a.name;
-  $('#activePill').style.setProperty('--pc', a.color);
-  scene.setAccent(a.color);                       // a linha e o halo do fone mudam para a cor do preset
+  $('#activePill').style.setProperty('--pc', themed(a.color));
+  scene.setAccent(themed(a.color));                       // a linha e o halo do fone mudam para a cor do preset
   const hc = (S.ui && S.ui.headset) || 'white', hsrc = '../assets/fuxi/' + (hc === 'white' ? 'hero.png' : 'hero-' + hc + '.png'), him = document.querySelector('.hp img');
   if (!him.src.endsWith(hsrc.slice(2))) him.src = hsrc;
   document.querySelectorAll('#hcols button').forEach(b => { b.classList.toggle('on', b.dataset.c === hc); b.title = b.dataset.n; b.onclick = () => hub.setUi({ headset: b.dataset.c }); });
+  const hb = $('#h3btn'); if (hb) { hb.classList.toggle('on', S.ui.view3d === true); hb.onclick = () => hub.setUi({ view3d: S.ui.view3d !== true }); }
   const q = $('#quick'); q.innerHTML = '';
   S.profiles.filter(p => !p.exe).slice(0, 6).forEach(p => {
     const b = document.createElement('button');
-    b.className = 'q' + (S.active === p.id ? ' on' : ''); b.textContent = p.name; b.style.setProperty('--c', p.color);
+    b.className = 'q' + (S.active === p.id ? ' on' : ''); b.textContent = p.name; b.style.setProperty('--c', themed(p.color));
     b.onclick = () => hub.apply(p.id);
     q.appendChild(b);
   });
@@ -236,7 +238,7 @@ function loadDraft(id) {
 // ---- gráfico de frequência real: eixo X logarítmico (20 Hz–20 kHz), eixo Y em dB (±12) ----
 const EQ = { ml: 46, mr: 16, mt: 16, mb: 28, lo: Math.log10(20), hi: Math.log10(20000), db: 12, qmin: 0.3, qmax: 8 };
 let eqGeom = null, eqSel = 3;
-const eqColor = () => (prof(editId) || prof('default')).color;
+const eqColor = () => themed((prof(editId) || prof('default')).color);
 const sgn = v => (v > 0 ? '+' : '') + v.toFixed(1);
 const fmtF = f => f >= 1000 ? String(Number((f / 1000).toPrecision(3))) + 'k' : String(Math.round(f));
 const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -614,7 +616,14 @@ function renderRules() {
   const presets = S.profiles.filter(p => !p.exe);
   const opts = sel => presets.map(p => `<option value="${esc(p.id)}"${p.id === sel ? ' selected' : ''}>${esc(p.name)}</option>`).join('');
   if (!rlUi) {
-    $('#rlBox').innerHTML = `<div class="card"><h3>Regras por programa</h3>
+    const mdRow = (site, name, desc) => `<div class="mdsv ${site}" id="md-${site}"><img class="mdlogo" src="../assets/services/${site}.png" alt="${name}"><div class="mdtx"><small>${desc}</small>
+        <div class="mdctl"><select class="sel" id="md-${site}-pre" style="min-width:140px;padding:6px 10px"></select><div class="seg" id="md-${site}-wh"><button data-w="open">Ao abrir</button><button data-w="play">Ao tocar</button></div><label class="switch"><span>${name}</span><input type="checkbox" id="md-${site}-on"><i></i></label></div></div></div>`;
+    $('#rlBox').innerHTML = `<div class="card"><h3>Música e vídeo</h3>
+      <div class="srow" style="border-top:0"><div class="lb"><b>Reconhecer Spotify e YouTube</b><small>O hub troca o preset sozinho quando o Spotify (app ou web) ou o YouTube (web) abrem ou começam a tocar, e volta ao anterior quando param. Jogos e as suas regras abaixo têm prioridade. Para a versão web, instale a extensão (aba Cloud gaming); sem ela o hub tenta pelo título da janela.</small></div>
+        <label class="switch"><span>Mídia</span><input type="checkbox" id="mdEn"><i></i></label></div>
+      ${mdRow('spotify', 'Spotify', 'Aplicativo e versão web.')}${mdRow('youtube', 'YouTube', 'Versão web, no navegador.')}
+      <div class="mdnow" id="mdNow"></div></div>
+      <div class="card"><h3>Regras por programa</h3>
       <div class="srow"><div class="lb"><b>Usar regras</b><small>Quando um programa da lista abre e nenhum jogo está aberto, o hub troca para o preset dele. Ao fechar, volta ao que estava. Jogos sempre têm prioridade sobre as regras.</small></div>
         <label class="switch"><span>Regras</span><input type="checkbox" id="rlEn"><i></i></label></div>
       <div class="sec">Suas regras</div><div id="rlList"></div></div>
@@ -635,7 +644,23 @@ function renderRules() {
       const list = [...S.rules.filter(r => r.exe.toLowerCase() !== exe.toLowerCase()), { exe, preset: $('#rlPre').value, label: $('#rlLbl').value.trim(), enabled: true }];
       const r = await hub.rulesSave(list); if (r.some(x => x.exe.toLowerCase() === exe.toLowerCase())) { toast('Regra adicionada'); $('#rlExe').value = ''; $('#rlLbl').value = ''; $('#rlPick').value = ''; } else toast('Não consegui adicionar essa regra');
     };
+    $('#mdEn').onchange = e => hub.setMedia({ enabled: e.target.checked });
+    for (const site of ['spotify', 'youtube']) {
+      $(`#md-${site}-on`).onchange = e => hub.setMedia({ [site]: { enabled: e.target.checked } });
+      $(`#md-${site}-pre`).onchange = e => hub.setMedia({ [site]: { preset: e.target.value } });
+      document.querySelectorAll(`#md-${site}-wh button`).forEach(b => b.onclick = () => hub.setMedia({ [site]: { when: b.dataset.w } }));
+    }
     rlUi = true;
+  }
+  if (S.mediaCfg) {
+    const mc = S.mediaCfg; $('#mdEn').checked = mc.enabled;
+    for (const site of ['spotify', 'youtube']) {
+      const c = mc[site]; $(`#md-${site}-on`).checked = c.enabled; $(`#md-${site}`).classList.toggle('off', !mc.enabled || !c.enabled);
+      const sel = $(`#md-${site}-pre`); if (document.activeElement !== sel) sel.innerHTML = opts(c.preset);
+      document.querySelectorAll(`#md-${site}-wh button`).forEach(b => b.classList.toggle('on', b.dataset.w === c.when));
+    }
+    const md = S.media && S.media.active ? S.media[S.media.active] : null, p = md && prof(mc[S.media.active].preset);
+    $('#mdNow').innerHTML = md ? `<span class="exdot on"></span><b>${S.media.active === 'spotify' ? 'Spotify' : 'YouTube'}</b> ${md.state === 'playing' ? 'tocando' : 'aberto'} (${esc(md.via)}) → preset <b>${esc(p ? p.name : '')}</b>` : `<span class="exdot"></span>Nada tocando agora.`;
   }
   $('#rlEn').checked = S.rulesEnabled !== false;
   $('#rlPre').innerHTML = opts($('#rlPre').value || 'music');
@@ -907,6 +932,10 @@ function renderConfig() {
     let tSt = null;
     stDelEl = slider(0, v => { const s = Math.round(v / 100 * 30); $('#stDelV').textContent = s === 0 ? 'na hora' : s + ' s'; clearTimeout(tSt); tSt = setTimeout(() => hub.setStartup({ delay: s }), 180); });
     $('#stDelSl').replaceWith(stDelEl);
+    $('#sgBox').insertAdjacentHTML('afterbegin', `<div class="card"><h3>Idioma</h3>
+      <div class="srow" style="border-top:0"><div class="lb"><b>Idioma do app</b><small>Português, inglês ou espanhol. A troca vale na hora para todas as telas e avisos.</small></div>
+        <div class="seg" id="lgSw"><button data-l="pt">Português</button><button data-l="en">English</button><button data-l="es">Español</button></div></div></div>`);
+    document.querySelectorAll('#lgSw button').forEach(b => b.onclick = () => hub.setUi({ lang: b.dataset.l }));
     $('#sgBox').insertAdjacentHTML('beforeend', `<div class="card"><h3>Áudio</h3>
       <div class="srow"><div class="lb"><b>Usar o Fuxi como saída ao conectar</b><small>Quando o fone liga, ele vira a saída de som padrão do Windows. Ao desligar, o som volta para a saída que estava antes (caixas, por exemplo).</small></div>
         <label class="switch"><span>Saída</span><input type="checkbox" id="asw"><i></i></label></div></div>
@@ -932,6 +961,8 @@ function renderConfig() {
         <label class="switch"><span>Sons</span><input type="checkbox" id="uiSn"><i></i></label></div>
       <div class="srow stk"><div class="lb"><b>Cor do app</b><small>“Automático” acompanha a cor do preset ou do jogo em uso; as outras ficam fixas.</small></div>
         <div class="thsw" id="thSw"><button data-t="auto" title="Automático"><i class="auto"></i></button><button data-t="cyan" title="Ciano"><i style="--c:#2ef2ff"></i></button><button data-t="green" title="Verde"><i style="--c:#3ddc5a"></i></button><button data-t="purple" title="Roxo"><i style="--c:#a78bfa"></i></button><button data-t="red" title="Vermelho"><i style="--c:#ff4d6d"></i></button><button data-t="amber" title="Âmbar"><i style="--c:#ffb347"></i></button></div></div>
+      <div class="srow stk"><div class="lb"><b>Estilo do app</b><small>Muda o visual de todas as telas, com uma transição animada a partir do ponto em que você clicou.</small></div>
+        <div class="stylesw" id="stSw"><button data-s="amoled"><i class="p amoled"></i><span>AMOLED</span></button><button data-s="glass"><i class="p glass"></i><span>Vidro</span></button><button data-s="neon"><i class="p neon"></i><span>Neon</span></button><button data-s="paper"><i class="p paper"></i><span>Papel</span></button></div></div>
       <div class="srow"><div class="lb"><b>Animação dos avisos</b><small>Como o aviso entra e sai no canto da tela.</small></div>
         <div class="seg" id="nfAnim"><button data-v="slide">Deslizar</button><button data-v="fade">Suave</button><button data-v="none">Nenhuma</button></div></div></div>`;
     $('#uiRm').onchange = e => hub.setUi({ reduceMotion: e.target.checked });
@@ -940,6 +971,7 @@ function renderConfig() {
     $('#uiWs').onchange = e => hub.setUi({ presetWash: e.target.checked });
     $('#uiSn').onchange = e => hub.setUi({ uiSounds: e.target.checked });
     document.querySelectorAll('#thSw button').forEach(b => b.onclick = () => hub.setUi({ theme: b.dataset.t }));
+    document.querySelectorAll('#stSw button').forEach(b => b.onclick = e => { window.__vtX = e.clientX; window.__vtY = e.clientY; hub.setUi({ style: b.dataset.s }); });
     document.querySelectorAll('#nfAnim button').forEach(b => b.onclick = () => hub.setNotify({ anim: b.dataset.v }).then(() => hub.testNotify('game')));
 
     $('#jgBox').innerHTML = `<div class="card"><h3>Reconhecimento de jogos</h3>
@@ -968,6 +1000,8 @@ function renderConfig() {
   $('#uiRm').checked = !!S.ui.reduceMotion; $('#uiFx').checked = S.ui.cardFx !== false;
   $('#uiSp').checked = S.ui.spectrum !== false; $('#uiWs').checked = S.ui.presetWash !== false; $('#uiSn').checked = S.ui.uiSounds !== false;
   document.querySelectorAll('#thSw button').forEach(b => b.classList.toggle('on', b.dataset.t === (S.ui.theme || 'auto')));
+  document.querySelectorAll('#stSw button').forEach(b => b.classList.toggle('on', b.dataset.s === (S.ui.style || 'amoled')));
+  document.querySelectorAll('#lgSw button').forEach(b => b.classList.toggle('on', b.dataset.l === (S.ui.lang || 'pt')));
   document.querySelectorAll('#nfAnim button').forEach(b => b.classList.toggle('on', b.dataset.v === (S.notify.anim || 'slide')));
   const as = S.autostart || {};
   $('#asEn').checked = !!as.on; $('#asEn').disabled = !as.available; $('#trayEn').checked = !!S.closeToTray;
@@ -1099,7 +1133,7 @@ function onState(s) {
   if (!prof(editId)) editId = 'default';
   if (window.Tour) Tour.onState();
   renderHome(); renderGames(); renderEq(); renderSettings(); renderHotkeys(); renderLinkChips(); renderIntro(); renderConfig(); renderRules(); renderCloud(); renderSurround();
-  if (window.Fx2) Fx2.onState(); if (window.Stats) Stats.render();
+  if (window.Fx2) Fx2.onState(); if (window.Stats) Stats.render(); if (window.BadgeUi) BadgeUi.render(); if (window.MicUi) MicUi.render(); if (window.UpdUi) UpdUi.render(); if (window.RemoteUi) RemoteUi.render();
   if (!introDone) {                                              // abertura: só na primeira vez que o estado chega
     introDone = true;
     // quando a abertura termina (ou não há abertura), avisa o main: se o hub abriu com o Windows, ele decide se fica na tela ou vai para a bandeja

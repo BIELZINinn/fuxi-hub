@@ -13,6 +13,8 @@ Equalizador real, presets automáticos por jogo, mixer por app, cloud gaming, su
 
 </div>
 
+> **English (short):** The app is available in Portuguese, English and Spanish (Settings → General → Language).
+>
 > **English (short):** Fuxi Hub is a Windows desktop app (Electron) for the Havit Fuxi H3 gaming headset. It drives a real 10-band parametric EQ through [Equalizer APO](https://sourceforge.net/projects/equalizerapo/), switches presets automatically per game, has a per-app mixer, cloud-gaming detection (xCloud / GeForce NOW), optional virtual surround via HeSuVi, a browser extension, a floating mini-window and a first-run tutorial. The interface is in Brazilian Portuguese. Download the installer from the [Releases](../../releases/latest) page.
 
 ---
@@ -36,7 +38,8 @@ Tudo roda **localmente no seu PC**: não há conta, nuvem própria, telemetria n
 - **19 jogos com preset próprio**, calibrados por jogo (passos, tiros, ambiente, cinemático…): Fortnite, Valorant, Counter-Strike 2, PUBG, God of War, Apex Legends, Call of Duty Warzone, Overwatch 2, Rainbow Six Siege, League of Legends, GTA V, Rocket League, Cyberpunk 2077, Elden Ring, Red Dead Redemption 2, Dota 2, Battlefield 2042, Escape from Tarkov e The Witcher 3.
 - **Troca automática**: o hub percebe o jogo aberto, aplica o preset e volta ao anterior quando você fecha.
 - **Reconhece qualquer jogo instalado** (Steam, Epic, Riot, Ubisoft, GOG, EA, Xbox, Rockstar) e aplica o preset "Jogos".
-- **Regras por programa** (por exemplo, Spotify → Música).
+- **Regras por programa** (por exemplo, Discord → Chamadas).
+- **Música e vídeo**: reconhece o **Spotify** (app e web) e o **YouTube** (web) e troca para o preset *Música* ou *Filmes* ao abrir ou ao tocar, voltando ao anterior quando param. Jogos e regras têm prioridade.
 - Aviso animado no canto da tela ao entrar e sair do jogo, com som próprio. Modo **não incomodar jogando**.
 
 ### Cloud gaming
@@ -47,8 +50,15 @@ Tudo roda **localmente no seu PC**: não há conta, nuvem própria, telemetria n
 
 ### Visual e extras
 - Visualizador de **espectro de áudio** ao vivo, transição de cor ao trocar de preset, fone que reage ao jogo e ao microfone mutado.
+- **Idiomas**: português, inglês e espanhol, com troca na hora.
+- **Estilos do app**: AMOLED, Vidro, Neon e Papel (tema claro), com transição animada.
 - **Cor do app**: automática (segue o preset) ou fixa. Três cores de fone: branco, preto e branco, e preto.
 - **Seu perfil**: horas jogadas, sequência de dias, jogos mais jogados e 15 conquistas.
+- **Tocando agora**: um disco do Spotify girando num canto da tela, que dá uma voltinha e mostra o nome a cada música nova (na versão web, com a capa do álbum; o hub baixa a capa direto do site do Spotify).
+- **Ajuste do microfone**: ganho, corte de graves e equalização da voz, aplicados pelo Equalizer APO sem mexer na saída de som.
+- **Atualização automática**: o hub confere o GitHub, baixa a versão nova em segundo plano, confere o SHA-256 e instala quando você aceitar.
+- **Controle pelo celular**: QR code para abrir uma página na sua rede Wi-Fi e trocar preset, volume e microfone sem sair do jogo (desligado por padrão, protegido por um código secreto).
+- **Fone em 3D**: modelo 3D animado do Fuxi H3, montado em código com three.js, que reage ao áudio e ao microfone mutado (experimental, desligado por padrão; liga pelo botão "3D" no Início).
 - **Mini-janela** flutuante (`Ctrl+Alt+V`) com preset, volume, microfone e espectro.
 - **Tutorial animado** na primeira abertura, que começa quando o Fuxi H3 é reconhecido.
 - Bandeja do sistema, **atalhos globais**, início com o Windows, backup automático e manual.
@@ -97,12 +107,12 @@ Todos podem ser alterados em Configurações → Atalhos.
 2. Ative o **Modo do desenvolvedor**, clique em **Carregar sem pacote** e escolha a pasta `extension` aberta pelo hub.
 3. Abra um jogo no xCloud ou no GeForce NOW: o status passa a "Extensão conectada".
 
-A extensão só conversa com o hub neste PC (`127.0.0.1`) e só roda em `xbox.com/play` e `geforcenow.com`.
+A extensão só conversa com o hub neste PC (`127.0.0.1`) e só roda em `xbox.com/play`, `geforcenow.com`, `open.spotify.com` e `youtube.com`.
 
 ## Privacidade
 
-- Nenhum dado sai do seu PC. O app não tem telemetria nem faz requisições a servidores próprios.
-- As únicas conexões externas são as páginas que você mesmo abre pelos botões (download do Equalizer APO e do HeSuVi).
+- Nenhum dado seu sai do PC. O app não tem telemetria nem servidores próprios.
+- As únicas conexões externas são: a consulta de versão nova à API pública do GitHub (só o download automático pode ser desligado, em Configurações → Sobre), a capa do álbum, baixada do site do Spotify quando você usa a extensão, e as páginas que você abre pelos botões (Equalizer APO e HeSuVi).
 - O servidor local da extensão escuta só em `127.0.0.1`, exige um token gerado neste PC e recusa pedidos vindos de páginas da web.
 
 ## Compilar do código-fonte
@@ -135,8 +145,9 @@ tools/                 scripts de desenvolvimento (capturas de tela, imagens, si
 
 - A detecção do jogo no **GeForce NOW** e no **app do Xbox** depende do que cada app mostra no título da janela, e isso pode variar. Para esses casos existe a **sessão manual**.
 - O som do **surround** e o reconhecimento em **cloud** dependem do HeSuVi e do navegador; nem tudo foi testado em todas as configurações.
-- A interface está apenas em **português do Brasil**.
-- As cores *preto* e *preto e branco* do fone na tela inicial são ilustrações do app.
+- As traduções para **inglês e espanhol** foram escritas à mão e cobrem a interface e os avisos; alguns textos raros podem aparecer em português. Sugestões de correção são bem-vindas.
+- As cores *preto* e *preto e branco* do fone na tela inicial são ilustrações do app, e o **modelo 3D** é uma interpretação estilizada do Fuxi H3, não uma cópia fiel.
+- O **controle pelo celular** usa HTTP na rede local, sem criptografia: ligue só em redes em que você confia.
 
 ## Avisos legais
 

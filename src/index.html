@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" translate="no">
 <head>
 <meta charset="utf-8">
+<meta name="google" content="notranslate">
 <title>Fuxi Hub</title>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: data: blob:; style-src 'self' 'unsafe-inline'">
 <link rel="stylesheet" href="style.css">
@@ -49,7 +50,7 @@
       <div class="herotext">
         <div class="devname" id="devname">Procurando fone…</div>
         <div class="devsub" id="devsub">&nbsp;</div>
-        <div class="hcols" id="hcols" title="Cor do fone"><button data-c="white" data-n="Branco" style="--c1:#ffffff;--c2:#b9b9c1"></button><button data-c="bw" data-n="Preto e branco" style="--c1:#f4f4f6;--c2:#16161a;--sp:50%"></button><button data-c="black" data-n="Preto" style="--c1:#4a4a50;--c2:#0b0b0d"></button></div>
+        <div class="hcols" id="hcols" title="Cor do fone"><button data-c="white" data-n="Branco" style="--c1:#ffffff;--c2:#b9b9c1"></button><button data-c="bw" data-n="Preto e branco" style="--c1:#f4f4f6;--c2:#16161a;--sp:50%"></button><button data-c="black" data-n="Preto" style="--c1:#4a4a50;--c2:#0b0b0d"></button></div><button class="h3btn" id="h3btn" title="Modelo 3D do fone">3D</button>
       <div class="pill" id="activePill"><i></i><span id="activeName">Padrão</span></div>
       </div>
     </div>
@@ -134,14 +135,16 @@
     <div class="cfg">
       <nav class="cfgnav" id="cfgNav">
         <button data-s="geral" class="on">Geral</button><button data-s="anim">Animações</button><button data-s="avisos">Avisos</button>
-        <button data-s="surround">Surround</button><button data-s="atalhos">Atalhos</button><button data-s="jogos">Jogos</button><button data-s="regras">Regras</button><button data-s="sobre">Sobre</button>
+        <button data-s="mic">Microfone</button><button data-s="celular">Celular</button><button data-s="surround">Surround</button><button data-s="atalhos">Atalhos</button><button data-s="jogos">Jogos</button><button data-s="regras">Regras</button><button data-s="sobre">Sobre</button>
       </nav>
       <div class="cfgbody">
         <div class="cfgsec on" data-s="geral"><div class="cards" id="sgBox"></div></div>
         <div class="cfgsec" data-s="anim"><div class="cards" id="inBox"></div><div class="cards" id="anBox"></div></div>
-        <div class="cfgsec" data-s="avisos"><div class="cards" id="nfBox"></div><div class="cards" id="gmBox"></div></div>
+        <div class="cfgsec" data-s="avisos"><div class="cards" id="nfBox"></div><div class="cards" id="gmBox"></div><div class="cards" id="bgBox"></div></div>
         <div class="cfgsec" data-s="atalhos"><div class="cards" id="hkBox"></div></div>
         <div class="cfgsec" data-s="jogos"><div class="cards" id="jgBox"></div></div>
+        <div class="cfgsec" data-s="mic"><div class="cards" id="mcBox"></div></div>
+        <div class="cfgsec" data-s="celular"><div class="cards" id="cePhBox"></div></div>
         <div class="cfgsec" data-s="surround"><div class="cards" id="svBox"></div></div>
         <div class="cfgsec" data-s="regras"><div class="cards" id="rlBox"></div></div>
         <div class="cfgsec" data-s="sobre"><div class="cards" id="sbBox"></div></div>
@@ -158,6 +161,9 @@
 
 <div class="toast" id="toast"></div>
 <div id="intro"></div>
+<script src="i18n-en.js"></script>
+<script src="i18n-es.js"></script>
+<script src="i18n.js"></script>
 <script src="mark.js"></script>
 <script src="intro.js"></script>
 <script src="viewer.js"></script>
@@ -168,6 +174,11 @@
 <script src="app.js"></script>
 <script src="fx2.js"></script>
 <script src="stats.js"></script>
+<script src="badgeui.js"></script>
+<script src="micui.js"></script>
+<script src="updui.js"></script>
+<script src="remoteui.js"></script>
+<script type="module" src="h3d-view.js"></script>
 <script src="tour.js"></script>
 </body>
 </html>

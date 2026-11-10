@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Fuxi Hub</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="theme-color" content="#000000"><meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{--ac:#2ef2ff}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;overflow-x:hidden;background:#000;color:#f2f2f4;font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;min-height:100%}
+body{padding:max(18px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));max-width:520px;margin:0 auto;background:radial-gradient(120% 60% at 50% -10%,color-mix(in srgb,var(--ac) 22%,#000),#000 70%) no-repeat}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.brand{font-size:13px;letter-spacing:.38em;color:#8a8a96}.brand b{color:var(--ac);margin-left:.4em}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#555;margin-right:8px;transition:.3s}.dot.on{background:#3ddc5a;box-shadow:0 0 10px #3ddc5a}
+.conn{font-size:12px;color:#8a8a96;display:flex;align-items:center}
+.card{border:1px solid #1d1d23;border-radius:22px;background:rgba(10,10,13,.8);padding:18px;margin-bottom:14px;backdrop-filter:blur(8px)}
+.hero{text-align:center;padding:26px 18px;border-color:color-mix(in srgb,var(--ac) 45%,#1d1d23);box-shadow:0 0 40px -14px var(--ac)}
+.hero small{display:block;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--ac)}
+.hero h1{font-size:34px;font-weight:300;letter-spacing:.14em;margin:8px 0 4px;text-transform:uppercase;text-shadow:0 0 28px var(--ac)}
+.hero p{margin:0;font-size:13px;color:#a8a8b4;min-height:18px}
+h2{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#8a8a96;font-weight:500;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.pr{padding:16px 10px;border-radius:16px;border:1px solid #23232b;background:#09090c;color:#e6e6ec;font-size:15px;font-weight:500;transition:.2s;touch-action:manipulation}
+.pr:active{transform:scale(.96)}.pr.on{border-color:var(--c);color:#fff;background:color-mix(in srgb,var(--c) 18%,#09090c);box-shadow:0 0 22px -6px var(--c)}
+.vol{display:flex;align-items:center;gap:14px}.vol b{width:48px;flex:none;text-align:right;font-size:20px;font-weight:300;color:var(--ac)}
+input[type=range]{-webkit-appearance:none;flex:1;min-width:0;height:10px;border-radius:10px;background:linear-gradient(90deg,var(--ac) var(--p,50%),#1a1a20 var(--p,50%));outline:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#050507;border:3px solid var(--ac);box-shadow:0 0 14px var(--ac)}
+.ib{width:46px;height:46px;border-radius:14px;border:1px solid #23232b;background:#09090c;display:grid;place-items:center;flex:none;padding:0}
+.ib svg{width:22px;height:22px;fill:none;stroke:#cfcfd8;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.ib.on{border-color:#ff4d6d;background:#1a0a0e}.ib.on svg{stroke:#ff6b7f}
+.tg{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-top:1px solid #17171d;font-size:15px}.tg:first-of-type{border-top:0}
+.sw{width:50px;height:28px;border-radius:16px;background:#17171c;position:relative;transition:.25s;border:0;flex:none}.sw:after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#666;transition:.3s cubic-bezier(.3,1.6,.5,1)}
+.sw.on{background:color-mix(in srgb,var(--ac) 35%,#0b0b0e)}.sw.on:after{left:25px;background:var(--ac);box-shadow:0 0 10px var(--ac)}
+.np{display:flex;align-items:center;gap:12px;font-size:13px;color:#a8a8b4}.np b{color:#fff;font-weight:600;display:block}
+.off{opacity:.4;pointer-events:none}
+</style></head>
+<body>
+<header><div class="brand">FUXI<b>HUB</b></div><div class="conn"><span class="dot" id="dot"></span><span id="conn">…</span></div></header>
+<div class="card hero"><small id="kHero">Preset</small><h1 id="aName">—</h1><p id="aSub"></p></div>
+<div class="card"><h2 id="kVol">Volume</h2><div class="vol"><button class="ib" id="mute"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/></svg></button><input type="range" id="vol" min="0" max="100" value="50"><b id="vv">—</b></div></div>
+<div class="card"><h2 id="kPre">Presets</h2><div class="grid" id="grid"></div></div>
+<div class="card"><div class="tg"><span id="kMic">Microfone mutado</span><button class="sw" id="swMic"></button></div><div class="tg"><span id="kEq">Equalizador ligado</span><button class="sw" id="swEq"></button></div><div class="tg"><span id="kAuto">Troca automática por jogo</span><button class="sw" id="swAuto"></button></div></div>
+<div class="card np" id="np" hidden><div><small style="color:#8a8a96;letter-spacing:.2em;font-size:10px" id="kNp">TOCANDO AGORA</small><b id="npT"></b><span id="npA"></span></div></div>
+<script>
+(function(){
+const L={pt:{Preset:'Preset',Volume:'Volume',Presets:'Presets',Mic:'Microfone mutado',Eq:'Equalizador ligado',Auto:'Troca automática por jogo',Np:'TOCANDO AGORA',on:'Conectado',off:'Sem conexão',playing:'Jogando'},
+en:{Preset:'Preset',Volume:'Volume',Presets:'Presets',Mic:'Microphone muted',Eq:'Equalizer on',Auto:'Auto switch per game',Np:'NOW PLAYING',on:'Connected',off:'Disconnected',playing:'Playing'},
+es:{Preset:'Preset',Volume:'Volumen',Presets:'Presets',Mic:'Micrófono silenciado',Eq:'Ecualizador activado',Auto:'Cambio automático por juego',Np:'SONANDO AHORA',on:'Conectado',off:'Sin conexión',playing:'Jugando'}};
+const lang=(navigator.language||'pt').slice(0,2),T=L[lang]||L.pt,$=id=>document.getElementById(id);
+const u=new URL(location.href);let tok=u.searchParams.get('t');
+if(tok){try{sessionStorage.setItem('ft',tok)}catch{} history.replaceState(null,'',location.pathname)}else{try{tok=sessionStorage.getItem('ft')}catch{}}
+$('kHero').textContent=T.Preset;$('kVol').textContent=T.Volume;$('kPre').textContent=T.Presets;$('kMic').textContent=T.Mic;$('kEq').textContent=T.Eq;$('kAuto').textContent=T.Auto;$('kNp').textContent=T.Np;
+let S=null,busy=0,volT=null,drag=false;
+async function api(p,body){try{const r=await fetch('/api/'+p,{method:body?'POST':'GET',headers:{'X-Fuxi-Token':tok||'','Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});if(!r.ok)throw 0;S=await r.json();render(true)}catch{render(false)}}
+const buzz=()=>{try{navigator.vibrate&&navigator.vibrate(12)}catch{}};
+function render(ok){
+ $('dot').classList.toggle('on',!!ok);$('conn').textContent=ok?T.on:T.off;document.querySelector('main')&&0;
+ if(!ok||!S)return;
+ const a=S.presets.find(p=>p.id===S.active)||{name:'—',color:'#2ef2ff'};
+ document.documentElement.style.setProperty('--ac',S.game&&S.gameColor?S.gameColor:a.color);
+ $('aName').textContent=a.name;$('aSub').textContent=S.game?T.playing+' · '+S.game:'';
+ const g=$('grid');if(g.dataset.k!==S.presets.map(p=>p.id).join()){g.dataset.k=S.presets.map(p=>p.id).join();g.innerHTML=S.presets.map(p=>`<button class="pr" data-id="${p.id}" style="--c:${p.color}">${p.name.replace(/</g,'&lt;')}</button>`).join('');g.querySelectorAll('.pr').forEach(b=>b.onclick=()=>{buzz();api('preset',{id:b.dataset.id})})}
+ g.querySelectorAll('.pr').forEach(b=>b.classList.toggle('on',b.dataset.id===S.active));
+ if(!drag&&S.volume!=null){$('vol').value=S.volume;$('vol').style.setProperty('--p',S.volume+'%');$('vv').textContent=S.volume+'%'}
+ $('mute').classList.toggle('on',!!S.mute);
+ $('swMic').classList.toggle('on',!!S.micMute);$('swEq').classList.toggle('on',!S.bypass);$('swAuto').classList.toggle('on',!!S.auto);
+ const n=$('np');n.hidden=!S.now;if(S.now){$('npT').textContent=S.now.title;$('npA').textContent=S.now.artist||''}
+}
+$('vol').oninput=e=>{drag=true;const v=+e.target.value;e.target.style.setProperty('--p',v+'%');$('vv').textContent=v+'%';clearTimeout(volT);volT=setTimeout(()=>{api('volume',{v});setTimeout(()=>drag=false,600)},110)};
+$('mute').onclick=()=>{buzz();api('mute',{on:!(S&&S.mute)})};
+$('swMic').onclick=()=>{buzz();api('mic',{mute:!(S&&S.micMute)})};
+$('swEq').onclick=()=>{buzz();api('bypass',{})};
+$('swAuto').onclick=()=>{buzz();api('auto',{on:!(S&&S.auto)})};
+api('state');setInterval(()=>{if(!document.hidden&&!drag)api('state')},2500);
+})();
+</script></body></html>

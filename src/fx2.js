@@ -120,10 +120,21 @@
   }
   requestAnimationFrame(loop);
 
+  // ---------- estilo do app (AMOLED / Vidro / Neon / Papel), com transição circular ----------
+  let lastStyle = null;
+  function applyStyle() {
+    const s = (S.ui && S.ui.style) || 'amoled'; if (s === lastStyle) return;
+    const first = lastStyle === null; lastStyle = s;
+    const set = () => { document.documentElement.dataset.style = s; };
+    if (first || !document.startViewTransition || rm()) { set(); return; }
+    const r = document.documentElement.style; r.setProperty('--vx', (window.__vtX != null ? window.__vtX : innerWidth / 2) + 'px'); r.setProperty('--vy', (window.__vtY != null ? window.__vtY : innerHeight / 2) + 'px');
+    document.startViewTransition(set);
+  }
   // ---------- chamado a cada novo estado ----------
   function onState() {
     if (!S) return;
-    applyTheme();
+    if (window.I18N && S.ui) I18N.setLang(S.ui.lang || 'pt');
+    applyTheme(); applyStyle();
     const key = S.active + '|' + (S.game || ''), early = performance.now() - t0 < 7000;
     const presetChanged = !firstState && key !== lastKey, gameStarted = !firstState && S.game && S.game !== lastGame;
     if (presetChanged && !early) {

@@ -15,5 +15,7 @@ chrome.runtime.onMessage.addListener((m, sender) => {
   const tab = String(sender.tab.id);
   if (m.type === 'state') hub('/cloud', { tab, ...m.data });
   if (m.type === 'closed') hub('/cloud', { tab, svc: m.svc, state: 'closed' });
+  if (m.type === 'media') hub('/media', { tab, ...m.data });
+  if (m.type === 'mediaClosed') hub('/media', { tab, site: m.site, state: 'closed' });
 });
-chrome.tabs.onRemoved.addListener(id => { hub('/cloud', { tab: String(id), svc: 'xcloud', state: 'closed' }); hub('/cloud', { tab: String(id), svc: 'gfn', state: 'closed' }); });
+chrome.tabs.onRemoved.addListener(id => { for (const svc of ['xcloud', 'gfn']) hub('/cloud', { tab: String(id), svc, state: 'closed' }); for (const site of ['spotify', 'youtube']) hub('/media', { tab: String(id), site, state: 'closed' }); });
