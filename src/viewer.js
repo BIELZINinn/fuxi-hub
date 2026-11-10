@@ -53,7 +53,7 @@
 
     function frame(now) {
       requestAnimationFrame(frame);
-      if (document.hidden) { last = now; return; }
+      if (document.hidden || document.body.classList.contains('perf')) { last = now; return; }                 // aba escondida ou modo jogo: não anima
       const idleSlow = phase === 'present' || phase === 'none';                     // parado: 30 quadros por segundo bastam (metade do trabalho)
       if (idleSlow && now - last < (document.body.classList.contains('sw') ? 100 : 30)) return;
       const dt = Math.min(.05, (now - last) / 1000); last = now;

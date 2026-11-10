@@ -5,7 +5,12 @@
     { "id": "music", "name": "Música", "tag": "Equilibrado", "color": "#b57bff", "eq": [3,3,1,0,-1,0,1,2,3,3] },
     { "id": "movies", "name": "Filmes", "tag": "Cinema", "color": "#ffb347", "eq": [4,4,2,0,0,0,1,2,2,2] },
     { "id": "voice", "name": "Chamadas", "tag": "Voz clara", "color": "#5ee0a0", "eq": [-6,-4,-2,0,2,3,3,1,0,-2] },
-    { "id": "gaming", "name": "Jogos", "tag": "Geral · qualquer jogo", "color": "#ff7a8a", "eq": [-2,-1,0,0,0,1,2,3,2,1] }
+    { "id": "gaming", "name": "Jogos", "tag": "Geral · qualquer jogo", "color": "#ff7a8a", "eq": [-2,-1,0,0,0,1,2,3,2,1] },
+    { "id": "bassboost", "name": "Bass Boost", "tag": "Importado do FxSound", "color": "#ff4d4d", "eq": [4,3,3,2,0,0,-1,-3,-3,-2] },
+    { "id": "clarity", "name": "Clareza", "tag": "Voz e detalhe", "color": "#4dd2ff", "eq": [-3,-2,-1,0,1,2,3,4,4,3] },
+    { "id": "treble", "name": "Agudos", "tag": "Brilho e ar", "color": "#c9a7ff", "eq": [-2,-1,0,0,0,1,3,5,5,4] },
+    { "id": "loudness", "name": "Loudness", "tag": "Graves e agudos em baixo volume", "color": "#ffd24d", "eq": [5,4,2,0,-1,0,1,3,4,4] },
+    { "id": "night", "name": "Noturno", "tag": "Suave, sem estourar", "color": "#7aa2ff", "eq": [-4,-3,-1,0,1,1,0,-1,-2,-3] }
   ],
   "games": [
     { "id": "fortnite", "name": "Fortnite", "tag": "Passos e construção", "color": "#2aa8ff", "exe": ["FortniteClient-Win64-Shipping.exe"], "eq": [-4,-2,1,2,3,4,4,3,1,0], "f": [40,100,250,500,1000,2500,4000,6300,10000,16000], "q": [0.7,0.9,1.2,1.0,1.0,1.4,1.4,1.6,1.4,1.41], "comfort": [{"i":6,"d":-2,"why":"Suaviza o brilho que cansa: tiros, recargas, vozes e efeitos agudos"},{"i":7,"d":-1.5,"why":"Suaviza o brilho que cansa: tiros, recargas, vozes e efeitos agudos"},{"i":8,"d":-1,"why":"Tira o \"ar\" agudo, o que mais cansa em sessões longas"}] },

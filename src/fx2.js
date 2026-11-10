@@ -12,7 +12,7 @@
     const t = (S.ui && S.ui.theme) || 'auto';
     if (t !== 'auto') return PAL[t] || PAL.cyan;
     const g = S.game && prof(S.game), a = prof(S.active);
-    return (g && g.color) || (a && a.color) || PAL.cyan;
+    return (g && g.theme && S.ui.gameTheme !== false ? g.theme.accent : null) || (g && g.color) || (a && a.color) || PAL.cyan;
   }
   function applyTheme() {
     const h = accentNow(); if (h === lastAcc) return; lastAcc = h;
@@ -82,7 +82,7 @@
     }
   }
   setInterval(async () => {                                              // luz vermelha no microfone quando está mutado
-    if (typeof page === 'undefined' || page !== 'home' || !S || !S.device || !S.device.known || !micDot) return;
+    if (typeof page === 'undefined' || page !== 'home' || !S || S.perf || !S.device || !S.device.known || !micDot) return;
     try { const m = await hub.micGet(); micDot.classList.toggle('on', !!(m && m.mute)); } catch {}
   }, 6000);
 
@@ -113,6 +113,7 @@
   let lastDraw = 0;
   function loop(now) {
     requestAnimationFrame(loop);
+    if (S && S.perf) { if (Spectrum.ok !== null) Spectrum.stop(); return; }                       // modo jogo: sem espectro nem captura de áudio
     if (document.hidden || !S || !S.ui || S.ui.spectrum === false || rm()) return;
     if (page !== 'home' && page !== 'eq') { if (Spectrum.ok !== null && performance.now() - lastSpUse > 15000) Spectrum.stop(); return; }
     lastSpUse = performance.now();
@@ -133,12 +134,24 @@
     const r = document.documentElement.style; r.setProperty('--vx', (window.__vtX != null ? window.__vtX : innerWidth / 2) + 'px'); r.setProperty('--vy', (window.__vtY != null ? window.__vtY : innerHeight / 2) + 'px');
     document.startViewTransition(set);
   }
-  // ---------- chamado a cada novo estado ----------
+  // ---------- tema por jogo: a arte do jogo aberto vira o fundo do app inteiro ----------
+  let gbgUrl = '';
+  function applyGameTheme() {
+    let el = document.getElementById('gameBg');
+    if (!el) { el = document.createElement('div'); el.id = 'gameBg'; document.body.insertBefore(el, document.body.children[1] || null); }
+    const gp = S.game && prof(S.game), on = !!(gp && S.ui && S.ui.gameTheme !== false), th = on && gp.theme, url = on ? ((th && th.artUrl) || gp.art || gp.banner || '') : '';
+    if (url !== gbgUrl) { gbgUrl = url; if (url) el.style.backgroundImage = `url('${url}')`; }
+    const s = document.documentElement.style, b = document.body;
+    if (th) { s.setProperty('--ac2', th.accent2 || th.accent); s.setProperty('--rad', (th.radius || 18) + 'px'); s.setProperty('--gop', th.artOpacity || 0.3); s.setProperty('--gpos', th.pos || 'center'); s.setProperty('--gtint', th.tint || th.accent); b.dataset.mood = th.mood || ''; }
+    else { s.setProperty('--gop', .2); s.setProperty('--gpos', 'center'); s.removeProperty('--rad'); s.removeProperty('--ac2'); s.removeProperty('--gtint'); delete b.dataset.mood; }
+    el.classList.toggle('on', !!url);
+    b.classList.toggle('gtheme', !!url);
+  }  // ---------- chamado a cada novo estado ----------
   function onState() {
     if (!S) return;
     if (window.I18N && S.ui) I18N.setLang(S.ui.lang || 'pt');
-    document.body.classList.toggle('sw', !S.gpu);
-    applyTheme(); applyStyle();
+    document.body.classList.toggle('sw', !S.gpu); document.body.classList.toggle('perf', !!S.perf);
+    applyTheme(); applyStyle(); applyGameTheme();
     const key = S.active + '|' + (S.game || ''), early = performance.now() - t0 < 7000;
     const presetChanged = !firstState && key !== lastKey, gameStarted = !firstState && S.game && S.game !== lastGame;
     if (presetChanged && !early) {

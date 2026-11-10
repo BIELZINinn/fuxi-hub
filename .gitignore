@@ -8,6 +8,9 @@
 !/main.js
 !/preload.js
 !/preload-toast.js
+!/preload-badge.js
+!/preload-np.js
+!/libscan.js
 !/src/
 !/assets/
 !/data/

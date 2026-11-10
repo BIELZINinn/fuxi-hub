@@ -3,7 +3,8 @@ let S = null, editId = 'default', draft = null, lastMode = null, page = 'home';
 
 const fmtHz = f => f >= 1000 ? (f / 1000) + 'k' : f;
 const prof = id => S.profiles.find(p => p.id === id);
-const themed = c => (S && S.ui && S.ui.theme && S.ui.theme !== 'auto' && window.Fx2 ? Fx2.accent() : c);     // cor fixa escolhida em Configurações vale para o app todo
+const themed = c => { if (!(S && S.ui && window.Fx2)) return c; const g = S.game && prof(S.game); return (S.ui.theme && S.ui.theme !== 'auto') || (g && g.theme && S.ui.gameTheme !== false) ? Fx2.accent() : c; };
+// (cor fixa escolhida, ou tema do jogo aberto, vale para o app todo)     // cor fixa escolhida em Configurações vale para o app todo
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 2400); }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -38,6 +39,9 @@ function renderHome() {
   lastMode = mode;
   $('#devname').textContent = d.known ? 'Fuxi H3' : d.connected ? (d.name || 'Fone genérico') : 'Nenhum fone';
   $('#devsub').textContent = d.known ? 'USB · conectado · reconhecido' : d.connected ? 'Fone genérico · modo compatível' : 'Conecte um fone para começar';
+  if (S.battery && typeof S.battery.level === 'number') {                  // bateria (só quando o Windows informa o nível do fone)
+    const lv = S.battery.level; $('#devsub').insertAdjacentHTML('beforeend', ` · <span>Bateria</span> <b class="batv${lv <= 10 ? ' crit' : lv <= 20 ? ' low' : ''}">${lv}%</b>`);
+  }
   const a = prof(S.active) || prof('default');
   $('#activeName').textContent = (S.game ? 'Jogando · ' : '') + a.name;
   $('#activePill').style.setProperty('--pc', themed(a.color));
@@ -47,7 +51,7 @@ function renderHome() {
   document.querySelectorAll('#hcols button').forEach(b => { b.classList.toggle('on', b.dataset.c === hc); b.title = b.dataset.n; b.onclick = () => hub.setUi({ headset: b.dataset.c }); });
   const hb = $('#h3btn'); if (hb) { hb.classList.toggle('on', S.ui.view3d === true); hb.onclick = () => hub.setUi({ view3d: S.ui.view3d !== true }); }
   const q = $('#quick'); q.innerHTML = '';
-  S.profiles.filter(p => !p.exe).slice(0, 6).forEach(p => {
+  S.profiles.filter(p => !p.exe).forEach(p => {
     const b = document.createElement('button');
     b.className = 'q' + (S.active === p.id ? ' on' : ''); b.textContent = p.name; b.style.setProperty('--c', themed(p.color));
     b.onclick = () => hub.apply(p.id);
@@ -56,8 +60,25 @@ function renderHome() {
 }
 
 // ---------- jogos ----------
+// ---- jogos instalados que ainda não estão na lista (Steam, Epic, Riot) ----
+const STORE_ICON = { Steam: 'Steam', Epic: 'Epic', Riot: 'Riot' };
+function renderLib() {
+  const box = $('#libBox'), lib = S.lib, items = lib ? lib.items : [];
+  const sig = JSON.stringify(items.map(i => i.key));
+  if (box.dataset.sig === sig) return; box.dataset.sig = sig;
+  if (!items.length) { box.innerHTML = ''; box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `<details class="libc" ${items.length <= 5 ? 'open' : ''}><summary><b>${items.length}</b> <span>${items.length === 1 ? 'jogo instalado sem preset' : 'jogos instalados sem preset'}</span><em>Steam · Epic · Riot</em></summary>
+    <div class="libl">${items.map(i => `<div class="libr" data-k="${esc(i.key)}" style="--c:${esc(i.color)}"><i></i><div><b>${esc(i.name)}</b><small>${esc(i.store)}${i.exe ? ' · ' + esc(i.exe) : ''}</small></div><button class="ghost" data-add>Adicionar</button><button class="ghost" data-ig title="Não sugerir de novo">Ignorar</button></div>`).join('')}</div>
+    <p class="hint">Ao adicionar, o jogo ganha um card, tema com a cor dele e o preset "Jogos" (você pode editar). O hub passa a reconhecer o programa dele.</p></details>`;
+  box.querySelectorAll('.libr').forEach(r => {
+    r.querySelector('[data-add]').onclick = async () => { const ok = await hub.libAdd(r.dataset.k); toast(ok ? 'Jogo adicionado à lista' : 'Não consegui adicionar'); };
+    r.querySelector('[data-ig]').onclick = async () => { await hub.libIgnore(r.dataset.k); toast('Não vou sugerir esse de novo'); };
+  });
+}
 function renderGames() {
   $('#autoSw').checked = S.auto;
+  renderLib();
   renderNow();
   if (!$('#gFilters').children.length) {
     $('#gFilters').innerHTML = GENRES.map(([k, t]) => `<button data-g="${k}" class="${k === gFilter ? 'on' : ''}">${t}</button>`).join('');
@@ -205,6 +226,7 @@ async function loadLinkList() {
 }
 $('#autoSw').onchange = e => { hub.setAuto(e.target.checked); toast(e.target.checked ? 'Troca automática ligada' : 'Troca automática desligada'); };
 $('#artBtn').onclick = () => hub.openArtFolder();
+$('#libBtn').onclick = async () => { const b = $('#libBtn'); b.disabled = true; b.textContent = 'Procurando…'; const r = await hub.libScan(); b.disabled = false; b.textContent = 'Procurar jogos no PC'; toast(r && r.items.length ? r.items.length + ' jogo(s) sem preset encontrado(s)' : 'Nenhum jogo novo encontrado'); };
 
 // ---------- EQ ----------
 function renderEq() {
@@ -805,6 +827,7 @@ async function refreshExt() {                                           // statu
   if (!$('#exSt')) return;
   const st = await hub.extStatus(), ok = st.last && Date.now() - st.last < 20000; exLast = st;
   $('#exSt').innerHTML = `<span class="exdot ${ok ? 'on' : ''}"></span>${ok ? 'Extensão conectada' : 'Extensão não conectada'}`;
+  const bx = document.querySelector('.extc'); if (bx) bx.classList.toggle('ok', !!ok);
   for (const [k, id] of [['xcloud', 'svsX'], ['gfn', 'svsG']]) {
     const t = st.tabs.find(v => v.svc === k && v.state === 'playing') || st.tabs.find(v => v.svc === k);
     $('#' + id).textContent = !t ? (S && S.cloudApps && S.cloudApps[k] ? (k === 'gfn' && S.cloudApps.gfnStreaming ? 'App nativo · em partida' : 'App nativo aberto') : 'Nenhuma aba aberta') : t.state === 'playing' ? 'Jogando' + (t.game ? ': ' + t.game : '') : 'Aberto, navegando';
@@ -822,25 +845,25 @@ function renderCloud() {
           <div class="svf"><span>Toque cloud</span><select id="clTbX" class="sel" style="min-width:140px;padding:6px 10px"></select></div></div>
         <div class="svc g" id="svcG"><div class="svh">${CLOUDMARK.gfn(54)}<div><b>NVIDIA GeForce NOW</b><small id="svsG"></small></div><label class="switch"><input type="checkbox" id="clG"><i></i></label></div>
           <div class="svf"><span>Toque cloud</span><select id="clTbG" class="sel" style="min-width:140px;padding:6px 10px"></select></div></div></div></div>
-      <div class="card"><h3>Extensão do navegador</h3>
-        <div class="srow stk" style="border-top:0"><div class="lb"><b id="exSt"></b><small>A extensão (Edge, Chrome ou Brave) lê a página do xCloud e do GeForce NOW e avisa o hub, neste PC, qual jogo está aberto. É mais preciso que ler o título da janela e não envia nada para a internet.</small></div>
-          <div class="btns" style="margin:0"><button class="ghost" data-ext="edge">Instalar no Edge</button><button class="ghost" data-ext="chrome">Chrome</button><button class="ghost" data-ext="brave">Brave</button></div></div>
-        <ol class="exsteps"><li>Clique no botão do seu navegador: o hub abre a pasta e a página de extensões.</li><li>Ative o <b>Modo do desenvolvedor</b> (canto da página).</li><li>Clique em <b>Carregar sem pacote</b> e escolha a pasta <b>extension</b> que o hub abriu.</li><li>Abra um jogo no xCloud ou no GeForce NOW: o status acima fica “conectada”.</li></ol>
-        <div class="srow"><div class="lb"><b>Usar a extensão</b><small>Quando ela está ativa, vale mais que o título da janela.</small></div><label class="switch"><input type="checkbox" id="exOn"><i></i></label></div>
-        <div class="srow"><div class="lb"><b>Plano B: título da janela</b><small>Se a extensão não estiver instalada ou o navegador estiver fechado, o hub ainda tenta pelo título das janelas.</small></div><label class="switch"><input type="checkbox" id="exFb"><i></i></label></div></div>
+      <div class="card extc"><div class="extrow"><div class="extst"><b id="exSt"></b><small>Reconhece o jogo do xCloud e do GeForce NOW no navegador.</small></div>
+          <div class="btns" style="margin:0"><button class="ghost" data-ext="edge">Instalar no Edge</button><button class="ghost" data-ext="chrome" title="Chrome">Chrome</button><button class="ghost" data-ext="brave" title="Brave">Brave</button></div></div>
+        <details class="extdt"><summary>Como instalar e opções</summary>
+          <ol class="exsteps"><li>Clique no navegador: o hub abre a pasta e a página de extensões.</li><li>Ative o <b>Modo do desenvolvedor</b> e use <b>Carregar sem pacote</b>, escolhendo a pasta <b>extension</b>.</li><li>Abra um jogo: o status passa a “conectada”.</li></ol>
+          <div class="srow"><div class="lb"><b>Usar a extensão</b></div><label class="switch"><input type="checkbox" id="exOn"><i></i></label></div>
+          <div class="srow"><div class="lb"><b>Plano B: título da janela</b></div><label class="switch"><input type="checkbox" id="exFb"><i></i></label></div></details></div>
       <div class="card mancard"><h3>App nativo e sessão manual</h3>
-        <div class="lb"><small style="font-size:12.5px;line-height:1.55;color:#a8a8b4">O hub também reconhece o app do GeForce NOW e o app do Xbox no Windows. Esses apps nem sempre mostram o nome do jogo: se o hub não souber qual é, diga aqui e ele aplica o preset do jogo com o toque cloud até você encerrar ou fechar o app.</small></div>
+        <div class="lb"><small style="font-size:12.5px;line-height:1.55;color:#a8a8b4">Se o app do GeForce NOW ou do Xbox não mostrar o jogo, escolha aqui e o hub aplica o preset dele.</small></div>
         <div id="manNow"></div>
         <div class="manrow" id="manForm"><select id="manSvc" class="sel" style="min-width:170px;flex:none"><option value="gfn">GeForce NOW</option><option value="xcloud">Xbox Cloud Gaming</option></select><select id="manGame" class="sel"></select><button class="ghost use" id="manGo" style="background:var(--ac);color:#001;border-color:var(--ac);font-weight:600">Iniciar</button></div></div>
       <div class="card"><h3>Toque cloud</h3>
-        <div class="srow stk"><div class="lb"><b>Ajuste do preset em sessão cloud</b><small>O som do streaming é comprimido: perde sub-grave e brilho. Em sessão cloud o hub aplica o preset do jogo com um acerto por cima. A linha azul mostra o efeito no preset do Fortnite; a pontilhada é o original. Cada serviço pode ter o seu nível (listas acima).</small></div>
+        <div class="srow stk"><div class="lb"><b>Ajuste do preset em sessão cloud</b><small>O som do streaming perde grave e brilho. Em sessão cloud o hub ajusta o preset por cima (linha azul; a pontilhada é o original).</small></div>
           <div class="seg" id="clTouch">${CL_LEVELS.map(([k, t]) => `<button data-v="${k}">${t}</button>`).join('')}</div></div>
         <div id="clCurve" style="padding:2px 4px 6px"></div>
         <div id="clCustom" hidden>${CL_REG.map(([n, r], i) => `<div class="srow" style="padding:9px 0"><div class="lb"><b>${n}</b><small>${r}</small></div><div class="ctl"><span id="clCs${i}"></span><span class="vv" id="clCv${i}" style="width:54px"></span></div></div>`).join('')}</div>
-        <div class="srow"><div class="lb"><b>Surround em cloud</b><small>Nível do surround virtual durante sessões cloud. “Igual ao geral” usa o nível das Configurações → Surround; exceções por jogo continuam valendo.</small></div>
+        <div class="srow"><div class="lb"><b>Surround em cloud</b><small>Nível do surround durante sessões cloud.</small></div>
           <select id="clSur" class="sel" style="min-width:150px"><option value="same">Igual ao geral</option><option value="off">Desligado</option><option value="light">Leve</option><option value="medium">Médio</option><option value="strong">Forte</option></select></div></div>
       <div class="card"><h3>O que o hub está vendo</h3>
-        <div class="srow" style="border-top:0"><div class="lb"><small>Janelas de navegador, do app do Xbox e do GeForce NOW, atualizadas a cada poucos segundos, e como cada título foi entendido. Se o seu jogo não é reconhecido, clique em “Ensinar” na janela dele.</small></div><button class="ghost" id="clRef" style="padding:6px 12px;font-size:12px">Atualizar</button></div>
+        <div class="srow" style="border-top:0"><div class="lb"><small>Ensinar na janela dele.“Ensinar” na janela dele.</small></div><button class="ghost" id="clRef" style="padding:6px 12px;font-size:12px">Atualizar</button></div>
         <div id="clWins"></div><div id="clTeach"></div>
         <div class="sec">Janelas ensinadas</div><div id="clLearn"></div></div>
       <div class="card"><h3>Histórico</h3><div id="clLog"></div><div class="btns"><button class="ghost" id="clClear" style="font-size:12px">Limpar histórico</button></div></div></div>`;
@@ -935,7 +958,25 @@ function renderConfig() {
     $('#sgBox').insertAdjacentHTML('beforeend', `<div class="card"><h3>Desempenho</h3>
       <div class="srow" style="border-top:0"><div class="lb"><b>Aceleração por GPU</b><small>Desligada: o app usa bem menos memória (cerca de 500 MB a menos) e fica leve na bandeja, com animações um pouco menos fluidas. Ligada: animações no máximo e o modelo 3D mais suave, com mais memória. Reinicia o app ao mudar.</small></div>
         <label class="switch"><span>GPU</span><input type="checkbox" id="gpuOn"><i></i></label></div>
+      <div class="srow"><div class="lb"><b>Modo jogo</b><small>Quando um aplicativo estiver em tela cheia (jogo, vídeo), o hub fica só com o essencial e deixa a parte visual parada para poupar o PC. Ao sair da tela cheia, tudo volta sozinho.</small></div>
+        <label class="switch"><span>Modo jogo</span><input type="checkbox" id="gmOn"><i></i></label></div>
+      <details class="gmx"><summary>Exceções do Modo jogo</summary><div class="gmbox">
+        <div class="gmh"><b>Não ativar com estes programas</b><small>Vídeos e navegador em tela cheia não ligam o Modo jogo. Se um jogo estiver aberto (até na nuvem), ele liga mesmo assim.</small></div>
+        <div class="gmch" id="gmIgChips"></div>
+        <div class="gmadd"><input id="gmIgIn" placeholder="programa.exe" autocomplete="off" spellcheck="false"><button class="ghost" id="gmIgAdd">Adicionar</button></div>
+        <div class="gmh"><b>Sempre ativar com estes programas</b><small>O Modo jogo liga quando o programa estiver na frente, mesmo em janela.</small></div>
+        <div class="gmch" id="gmAlChips"></div>
+        <div class="gmadd"><input id="gmAlIn" placeholder="programa.exe" autocomplete="off" spellcheck="false"><button class="ghost" id="gmAlAdd">Adicionar</button></div>
+        <div class="gmlast" id="gmLast"></div></div></details>
       <div class="mcnote">Economia de memória: ao fechar a janela (X), o app vai para a bandeja e libera a interface. Os avisos, o selo e o disco também só existem enquanto aparecem.</div></div>`);
+    $('#gmOn').onchange = e => hub.setGameMode(e.target.checked);
+    const gmNorm = v => String(v || '').trim().toLowerCase().replace(/\.exe$/, '');
+    const gmSet = (key, fn) => { const cur = (S.ui[key] || []).slice(), nx = fn(cur); hub.setUi({ [key]: nx }); };
+    for (const [key, inp, add] of [['gmIgnore', '#gmIgIn', '#gmIgAdd'], ['gmAlways', '#gmAlIn', '#gmAlAdd']]) {
+      const go1 = () => { const n = gmNorm($(inp).value); if (!n) return; if (!/^[\w .()+\-]{1,60}$/.test(n)) { toast('Nome de programa inválido'); return; }
+        gmSet(key, a => (a.includes(n) ? a : [...a, n])); gmSet(key === 'gmIgnore' ? 'gmAlways' : 'gmIgnore', a => a.filter(x => x !== n)); $(inp).value = ''; };       // um programa fica só numa lista
+      $(add).onclick = go1; $(inp).onkeydown = e => { if (e.key === 'Enter') go1(); };
+    }
     $('#gpuOn').onchange = e => { if (confirm(e.target.checked ? 'Ligar a aceleração por GPU? O app vai reiniciar e passar a usar mais memória.' : 'Desligar a aceleração por GPU? O app vai reiniciar.')) hub.setGpu(e.target.checked); else e.target.checked = !e.target.checked; };
     $('#sgBox').insertAdjacentHTML('afterbegin', `<div class="card"><h3>Idioma</h3>
       <div class="srow" style="border-top:0"><div class="lb"><b>Idioma do app</b><small>Português, inglês ou espanhol. A troca vale na hora para todas as telas e avisos.</small></div>
@@ -958,6 +999,8 @@ function renderConfig() {
         <label class="switch"><span>Reduzir</span><input type="checkbox" id="uiRm"><i></i></label></div>
       <div class="srow"><div class="lb"><b>Efeitos nos cards de jogos</b><small>Inclinação, zoom da arte e reflexo de luz ao passar o mouse.</small></div>
         <label class="switch"><span>Efeitos</span><input type="checkbox" id="uiFx"><i></i></label></div>
+      <div class="srow"><div class="lb"><b>Tema por jogo</b><small>Com um jogo aberto, o app inteiro assume a cor e a arte dele no fundo. Ao fechar o jogo, volta ao normal.</small></div>
+        <label class="switch"><span>Jogo</span><input type="checkbox" id="uiGt"><i></i></label></div>
       <div class="srow"><div class="lb"><b>Visualizador de áudio</b><small>Espectro ao vivo atrás do fone (Início) e sobre a curva do equalizador. Lê o som que está saindo no PC, sem usar o microfone.</small></div>
         <label class="switch"><span>Espectro</span><input type="checkbox" id="uiSp"><i></i></label></div>
       <div class="srow"><div class="lb"><b>Transição ao trocar de preset</b><small>A tela se pinta com a cor do preset e mostra o nome por um instante.</small></div>
@@ -972,6 +1015,7 @@ function renderConfig() {
         <div class="seg" id="nfAnim"><button data-v="slide">Deslizar</button><button data-v="fade">Suave</button><button data-v="none">Nenhuma</button></div></div></div>`;
     $('#uiRm').onchange = e => hub.setUi({ reduceMotion: e.target.checked });
     $('#uiFx').onchange = e => hub.setUi({ cardFx: e.target.checked });
+    $('#uiGt').onchange = e => hub.setUi({ gameTheme: e.target.checked });
     $('#uiSp').onchange = e => hub.setUi({ spectrum: e.target.checked });
     $('#uiWs').onchange = e => hub.setUi({ presetWash: e.target.checked });
     $('#uiSn').onchange = e => hub.setUi({ uiSounds: e.target.checked });
@@ -982,7 +1026,8 @@ function renderConfig() {
     $('#jgBox').innerHTML = `<div class="card"><h3>Reconhecimento de jogos</h3>
       <div class="srow"><div class="lb"><b>Reconhecer qualquer jogo instalado</b><small>Além dos 19 da lista, o hub identifica jogos de Steam, Epic, Riot, Ubisoft, GOG, EA, Xbox e Rockstar pela pasta e aplica o preset "Jogos". Desligado, só vale a lista e o que você vinculou.</small></div>
         <label class="switch"><span>Reconhecer</span><input type="checkbox" id="jgDet"><i></i></label></div>
-      <div class="sec">Programas que você vinculou</div><div id="jgLinks"></div></div>
+      <div class="sec">Programas que você vinculou</div><div id="jgLinks"></div>
+      <div class="sec">Jogos que você adicionou</div><div id="jgUser"></div></div>
       <div class="card"><h3>Uso e dados</h3>
       <div class="srow"><div class="lb"><b>Estatísticas de uso</b><small>Quantas vezes e por quanto tempo você jogou cada jogo (usadas em "Mais jogados" e "Recentes"). Ficam só neste computador.</small></div>
         <button class="ghost" id="jgReset">Zerar</button></div>
@@ -997,14 +1042,37 @@ function renderConfig() {
       <div class="kv"><span>Fone</span><b id="sbDev"></b></div>
       <div class="kv"><span>Motor de equalização</span><b id="sbEng"></b></div>
       <div class="kv"><span>Dados e configurações</span><b><button class="ghost" id="sbData" style="padding:5px 12px;font-size:12px">Abrir pasta</button></b></div>
+      <div class="kv"><span>Novidades</span><b><button class="ghost" id="sbNews" style="padding:5px 12px;font-size:12px">Ver novidades</button></b></div>
       <div class="kv"><span>Tutorial</span><b><button class="ghost" id="sbTour" style="padding:5px 12px;font-size:12px">Rever tutorial</button></b></div></div>`;
     $('#sbData').onclick = () => hub.openDataFolder();
+    $('#sbNews').onclick = () => News.replay();
     $('#sbTour').onclick = () => { go('home'); setTimeout(() => Tour.replay(), 300); };
     cfgUi = true;
   }
-  if ($('#gpuOn')) $('#gpuOn').checked = !!S.gpu;
+  if ($('#gpuOn')) $('#gpuOn').checked = !!S.gpu; if ($('#gmOn')) $('#gmOn').checked = S.ui.gameMode !== false;
+  if ($('#gmIgChips')) {                                                                                  // exceções do Modo jogo
+    const chips = (list, key) => (list || []).map(n => `<span class="gmc">${esc(n)}.exe<button data-k="${key}" data-n="${esc(n)}" title="Remover">×</button></span>`).join('') || '<em>Nenhum</em>';
+    const sig = JSON.stringify([S.ui.gmIgnore, S.ui.gmAlways, S.fsLast]);
+    if ($('#gmIgChips').dataset.sig !== sig) {
+      $('#gmIgChips').dataset.sig = sig;
+      $('#gmIgChips').innerHTML = chips(S.ui.gmIgnore, 'gmIgnore'); $('#gmAlChips').innerHTML = chips(S.ui.gmAlways, 'gmAlways');
+      document.querySelectorAll('.gmc button').forEach(b => b.onclick = () => hub.setUi({ [b.dataset.k]: (S.ui[b.dataset.k] || []).filter(x => x !== b.dataset.n) }));
+      const fl = S.fsLast, known = fl && ((S.ui.gmIgnore || []).includes(fl) || (S.ui.gmAlways || []).includes(fl));
+      $('#gmLast').innerHTML = fl && !known ? `<span>Último em tela cheia:</span> <b>${esc(fl)}.exe</b> <button class="ghost" data-t="gmIgnore">Ignorar</button> <button class="ghost" data-t="gmAlways">Sempre ativar</button>` : '';
+      document.querySelectorAll('#gmLast [data-t]').forEach(b => b.onclick = () => {
+        const t = b.dataset.t, o = t === 'gmIgnore' ? 'gmAlways' : 'gmIgnore';
+        hub.setUi({ [t]: [...(S.ui[t] || []), fl], [o]: (S.ui[o] || []).filter(x => x !== fl) });
+      });
+    }
+  }
+  if ($('#jgUser')) {                                                                                     // jogos adicionados a partir da busca
+    const us = S.profiles.filter(p => p.user);
+    $('#jgUser').innerHTML = us.length ? us.map(p => `<div class="lkrow"><div><b>${esc(p.name)}</b> <em>${esc((p.exe || []).join(', '))}</em></div><button class="ghost" data-rm="${esc(p.id)}" style="padding:5px 12px;font-size:12px">Remover</button></div>`).join('')
+      : '<div class="lkrow"><em>Nenhum ainda. Use "Procurar jogos no PC" na aba Jogos.</em></div>';
+    document.querySelectorAll('#jgUser [data-rm]').forEach(b => b.onclick = () => hub.userGameRemove(b.dataset.rm));
+  }
   $('#uiRm').checked = !!S.ui.reduceMotion; $('#uiFx').checked = S.ui.cardFx !== false;
-  $('#uiSp').checked = S.ui.spectrum !== false; $('#uiWs').checked = S.ui.presetWash !== false; $('#uiSn').checked = S.ui.uiSounds !== false;
+  $('#uiGt').checked = S.ui.gameTheme !== false; $('#uiSp').checked = S.ui.spectrum !== false; $('#uiWs').checked = S.ui.presetWash !== false; $('#uiSn').checked = S.ui.uiSounds !== false;
   document.querySelectorAll('#thSw button').forEach(b => b.classList.toggle('on', b.dataset.t === (S.ui.theme || 'auto')));
   document.querySelectorAll('#stSw button').forEach(b => b.classList.toggle('on', b.dataset.s === (S.ui.style || 'amoled')));
   document.querySelectorAll('#lgSw button').forEach(b => b.classList.toggle('on', b.dataset.l === (S.ui.lang || 'pt')));
@@ -1034,6 +1102,7 @@ function renderConfig() {
 const NF_TYPES = [
   ['game', 'Jogo detectado', 'Nome do jogo e o preset aplicado, com a mini curva do equalizador'],
   ['gameEnd', 'Jogo encerrado', 'Mostra para qual preset o som voltou'],
+  ['summary', 'Resumo da sessão', 'Cartão com a arte do jogo e quanto tempo você jogou (sessões de 1 min ou mais)'],
   ['device', 'Fuxi conectado ou desconectado', 'Quando você pluga ou desplugua o fone'],
   ['preset', 'Troca de preset', 'Quando o preset muda por atalho ou pela bandeja'],
   ['mic', 'Microfone', 'Quando o microfone é mutado ou reativado']
@@ -1066,7 +1135,7 @@ function renderSettings() {
         <div class="srow"><div class="lb"><b>Volume dos avisos</b></div><div class="ctl"><span id="nfVolSl"></span><span class="vv" id="nfVolV"></span></div></div>
         <div class="sec">Testar</div>
         <div class="tests">
-          <button class="ghost" data-test="game">Jogo detectado</button><button class="ghost" data-test="gameEnd">Jogo encerrado</button>
+          <button class="ghost" data-test="game">Jogo detectado</button><button class="ghost" data-test="gameEnd">Jogo encerrado</button><button class="ghost" data-test="summary">Resumo</button>
           <button class="ghost" data-test="deviceOn">Fuxi conectado</button><button class="ghost" data-test="deviceOff">Fuxi desconectado</button>
           <button class="ghost" data-test="preset">Troca de preset</button><button class="ghost" data-test="micOff">Mic mutado</button><button class="ghost" data-test="micOn">Mic ativo</button>
         </div>
@@ -1139,7 +1208,7 @@ function onState(s) {
   if (!prof(editId)) editId = 'default';
   if (window.Tour) Tour.onState();
   renderHome(); renderGames(); renderEq(); renderSettings(); renderHotkeys(); renderLinkChips(); renderIntro(); renderConfig(); renderRules(); renderCloud(); renderSurround();
-  if (window.Fx2) Fx2.onState(); if (window.Stats) Stats.render(); if (window.BadgeUi) BadgeUi.render(); if (window.MicUi) MicUi.render(); if (window.UpdUi) UpdUi.render(); if (window.RemoteUi) RemoteUi.render();
+  if (window.Fx2) Fx2.onState(); if (window.Stats) Stats.render(); if (window.BadgeUi) BadgeUi.render(); if (window.MicUi) MicUi.render(); if (window.UpdUi) UpdUi.render(); if (window.RemoteUi) RemoteUi.render(); if (window.QrHome) QrHome.render(); if (window.News) News.render();
   if (!introDone) {                                              // abertura: só na primeira vez que o estado chega
     introDone = true;
     // quando a abertura termina (ou não há abertura), avisa o main: se o hub abriu com o Windows, ele decide se fica na tela ou vai para a bandeja

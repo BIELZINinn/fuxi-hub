@@ -27,3 +27,13 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 .pill b{display:block;font-size:13.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill span{display:block;font-size:11.5px;color:#a8a8b4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 body.rm *{animation:none!important}
+
+/* mini player: botões aparecem ao passar o mouse no disco ou no cartão */
+.pill{max-width:250px}
+.ctl{display:none;gap:8px;margin-top:9px}.np.hov .ctl{display:flex}.np.nocmd .ctl{display:none!important}
+.ctl button{flex:1;height:30px;border-radius:10px;border:1px solid color-mix(in srgb,var(--c) 35%,#23232b);background:#0b0c0f;display:grid;place-items:center;cursor:pointer;padding:0;transition:.2s}
+.ctl button:hover{border-color:var(--c);background:color-mix(in srgb,var(--c) 18%,#0b0c0f);box-shadow:0 0 12px -4px var(--c)}.ctl button:active{transform:scale(.92)}
+.ctl svg{width:16px;height:16px;fill:#e6e6ec;stroke:#e6e6ec;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ctl .iplay{display:none}.np.paused .ctl .iplay{display:block}.np.paused .ctl .ipause{display:none}
+.ctl .ipause{fill:none}.np.hov .pill{opacity:1;transform:none}
+.np.hov .disc{cursor:pointer}

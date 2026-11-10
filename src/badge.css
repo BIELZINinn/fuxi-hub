@@ -18,3 +18,10 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 .bd.blink.on{animation:blink 3.6s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.22}}
 body.rm *{animation:none!important}
+
+/* bateria do fone, embaixo do selo */
+.bat{position:absolute;left:50%;top:calc(100% + 6px);transform:translateX(-50%);display:none;align-items:center;gap:4px;padding:2px 7px 2px 5px;border-radius:9px;background:rgba(7,8,10,.92);border:1px solid #2a2a30;font:600 10px/1 "Segoe UI",sans-serif;color:#d8d8e0;white-space:nowrap}
+.bat i{display:block;width:14px;height:7px;border:1px solid currentColor;border-radius:2px;padding:1px;box-sizing:content-box;position:relative}
+.bat i:after{content:"";position:absolute;right:-3px;top:2px;width:2px;height:5px;background:currentColor;border-radius:0 1px 1px 0}
+.bat b{display:block;height:100%;background:currentColor;border-radius:1px}
+.bat.low{color:#ffb02e;border-color:#6a4a10}.bat.crit{color:#ff4655;border-color:#6a1e26}

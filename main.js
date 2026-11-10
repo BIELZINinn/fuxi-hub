@@ -17,7 +17,7 @@ const APO_FILE = 'fuxi-hub.txt';
 
 let win, settingsPath;
 // ---- configuração dos avisos no canto da tela ----
-const NOTIFY_DEFAULT = { enabled: true, types: { game: true, gameEnd: true, device: true, preset: true, mic: true }, position: 'top-right', duration: 5, sound: true, volume: 0.7, style: 'full', anim: 'slide',
+const NOTIFY_DEFAULT = { enabled: true, types: { game: true, gameEnd: true, summary: true, device: true, preset: true, mic: true }, position: 'top-right', duration: 5, sound: true, volume: 0.7, style: 'full', anim: 'slide',
   gameSounds: true,                                                           // som de entrada com a "assinatura" de cada jogo
   dnd: true, dndAllow: { preset: false, mic: false, device: false } };       // "não incomodar jogando": com um jogo aberto, só avisa entrada/saída do jogo (e o que você permitir)
 const POSITIONS = ['top-right', 'top-left', 'bottom-right', 'bottom-left'];
@@ -51,7 +51,11 @@ const mergeIntro = i => ({ style: INTRO_STYLES.includes(i && i.style) ? i.style 
 // ---- cloud gaming (xCloud / GeForce NOW) e regras por programa ----
 const UI_THEMES = ['auto', 'cyan', 'green', 'purple', 'red', 'amber'];
 const mergeUi = u => { u = u || {}; return { reduceMotion: !!u.reduceMotion, cardFx: u.cardFx !== false, headset: ['white', 'bw', 'black'].includes(u.headset) ? u.headset : 'white',
-  theme: UI_THEMES.includes(u.theme) ? u.theme : 'auto', style: ['amoled', 'glass', 'neon', 'paper'].includes(u.style) ? u.style : 'amoled', lang: ['pt', 'en', 'es'].includes(u.lang) ? u.lang : 'pt', spectrum: u.spectrum !== false, uiSounds: u.uiSounds !== false, presetWash: u.presetWash !== false, view3d: u.view3d === true }; };
+  theme: UI_THEMES.includes(u.theme) ? u.theme : 'auto', style: ['amoled', 'glass', 'neon', 'paper'].includes(u.style) ? u.style : 'amoled', lang: ['pt', 'en', 'es'].includes(u.lang) ? u.lang : 'pt', spectrum: u.spectrum !== false, uiSounds: u.uiSounds !== false, presetWash: u.presetWash !== false, view3d: u.view3d === true, gameTheme: u.gameTheme !== false, gameMode: u.gameMode !== false,
+  gmAlways: exeNames(u.gmAlways), gmIgnore: Array.isArray(u.gmIgnore) ? exeNames(u.gmIgnore) : GM_IGNORE_DEFAULT.slice() }; };
+// Modo jogo: nomes de programa (sem .exe, minúsculos). "gmAlways" = sempre ativa o modo quando está na frente; "gmIgnore" = tela cheia dele não ativa (vídeo, navegador)
+const GM_IGNORE_DEFAULT = ['chrome', 'msedge', 'firefox', 'brave', 'opera', 'vivaldi', 'vlc', 'mpv', 'mpc-hc64', 'potplayermini64', 'netflix', 'spotify', 'wmplayer', 'video.ui'];
+function exeNames(a) { const out = []; for (const s of Array.isArray(a) ? a : []) { const n = String(s || '').trim().toLowerCase().replace(/\.exe$/, ''); if (/^[\w .()+\-]{1,60}$/.test(n) && !out.includes(n)) out.push(n); if (out.length >= 40) break; } return out; }
 // Música e vídeo: Spotify (app e web) e YouTube (web) trocam o preset sozinhos. "when": open = assim que abrir · play = só enquanto estiver tocando.
 const mergeMedia = m => { m = m || {}; const one = (x, preset, when) => ({ enabled: !(x && x.enabled === false), preset: /^[\w-]{1,40}$/.test((x && x.preset) || '') ? x.preset : preset, when: ['open', 'play'].includes(x && x.when) ? x.when : when });
   return { enabled: m.enabled !== false, spotify: one(m.spotify, 'music', 'play'), youtube: one(m.youtube, 'movies', 'play') }; };
@@ -116,6 +120,7 @@ function loadSettings() {
   settings.closeToTray = settings.closeToTray !== false;
   if (!settings.exes || typeof settings.exes !== 'object') settings.exes = {};
   settings.ui = mergeUi(settings.ui); settings.media = mergeMedia(settings.media); settings.badge = mergeBadge(settings.badge); settings.nowplaying = mergeNp(settings.nowplaying); settings.micfx = mergeMic(settings.micfx); settings.update = mergeUpdate(settings.update); settings.remote = mergeRemote(settings.remote); settings.gpu = settings.gpu === true;
+  if (!/^[\d.]{1,20}$/.test(settings.seenVersion || '')) settings.seenVersion = (settings.tutorial && settings.tutorial.done) ? '0.0.0' : app.getVersion();     // instalação nova não vê as novidades; quem atualiza vê
   settings.detectGeneric = settings.detectGeneric !== false;
   settings.audioSwitch = settings.audioSwitch !== false;
   if (!Array.isArray(settings.favorites)) settings.favorites = [];
@@ -129,6 +134,10 @@ function loadSettings() {
   settings.cloud = mergeCloud(settings.cloud);
   settings.rules = mergeRules(settings.rules); settings.rulesEnabled = settings.rulesEnabled !== false;
   settings.surround = mergeSurround(settings.surround);
+  settings.ignoredGames = (Array.isArray(settings.ignoredGames) ? settings.ignoredGames : []).filter(s => /^[a-z0-9]{1,60}$/.test(s)).slice(-300);
+  settings.userGames = (Array.isArray(settings.userGames) ? settings.userGames : []).filter(g => g && /^g_[a-z0-9]{1,40}$/.test(g.id) && typeof g.name === 'string' && /^#[0-9a-f]{6}$/i.test(g.color || '')).slice(0, 100)
+    .map(g => ({ id: g.id, name: g.name.slice(0, 60), color: g.color, exe: /^[\w .()+\-]{1,80}\.exe$/i.test(g.exe || '') ? g.exe : '', dir: typeof g.dir === 'string' ? g.dir.slice(0, 260) : '', store: String(g.store || '').slice(0, 12) }));
+  settings.userGames.forEach(registerUserGame);
 }
 function saveSettings() { try { fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2)); } catch {} }
 
@@ -142,11 +151,13 @@ function artFor(id, suffix = '') {
   }
   return null;
 }
+let THEMES = {}; try { THEMES = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'themes.json'), 'utf8').replace(/^\uFEFF/, '')); } catch {}
+const themeOf = id => { const t = THEMES[id]; if (!t) return null; const f = t.art ? path.join(__dirname, 'assets', 'themes', t.art) : ''; return { ...t, artUrl: f && fs.existsSync(f) ? pathToFileURL(f).href : '' }; };
 function allProfiles() {
   const base = [...DATA.profiles, ...DATA.games].map(p => {
     const d = EQMath.normalize(p.f || p.q || p.t ? { g: p.eq, f: p.f, q: p.q, t: p.t } : p.eq, BANDS);   // original de fábrica (em games.json, "f", "q" e "t" são opcionais por jogo)
     const cur = settings.overrides[p.id] ? EQMath.normalize(settings.overrides[p.id], BANDS) : d;   // o que o usuário salvou (aceita formato antigo)
-    return { ...p, defaultEq: d.g, defaultF: d.f, defaultQ: d.q, defaultT: d.t, eq: cur.g, f: cur.f, q: cur.q, t: cur.t, art: artFor(p.id), banner: artFor(p.id, '-banner') || artFor(p.id), iconArt: artFor(p.id, '-icon') || artFor(p.id),
+    return { ...p, defaultEq: d.g, defaultF: d.f, defaultQ: d.q, defaultT: d.t, eq: cur.g, f: cur.f, q: cur.q, t: cur.t, art: artFor(p.id), banner: artFor(p.id, '-banner') || artFor(p.id), iconArt: artFor(p.id, '-icon') || artFor(p.id), theme: themeOf(p.id),
       assigned: p.exe ? (settings.assign[p.id] || null) : undefined, userExe: p.exe ? ((settings.exes && settings.exes[p.id]) || []) : undefined };
   });
   const custom = settings.custom.map(c => {
@@ -672,6 +683,10 @@ function startRemote() {
   tryPort(0);
 }
 function stopRemote() { if (remoteSrv) { try { remoteSrv.close(); remoteSrv.closeAllConnections && remoteSrv.closeAllConnections(); } catch {} remoteSrv = null; remotePort = 0; remoteSeen.clear(); push(); } }
+let CHANGELOG = {}; try { CHANGELOG = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'changelog.json'), 'utf8').replace(/^\uFEFF/, '')); } catch {}
+function newsFor(force) { const v = app.getVersion(), n = CHANGELOG[v]; if (!n) return null; return (force || isNewer(v, settings.seenVersion)) ? { version: v, items: n, force: !!force } : null; }
+ipcMain.handle('news-seen', () => { settings.seenVersion = app.getVersion(); saveSettings(); push(); return true; });
+ipcMain.handle('news-get', () => { const v = app.getVersion(), n = CHANGELOG[v]; return n ? { version: v, items: n } : null; });
 ipcMain.handle('set-gpu', (_, v) => { settings.gpu = !!v; saveSettings(); quitting = true; app.relaunch(); app.exit(0); return true; });
 ipcMain.handle('remote-set', (_, p) => { settings.remote = mergeRemote({ ...settings.remote, ...(p || {}) }); saveSettings(); if (settings.remote.enabled) { if (!remoteSrv) startRemote(); } else stopRemote(); setTimeout(push, 400); return settings.remote.enabled; });
 ipcMain.handle('remote-newtoken', () => { settings.remote.token = require('crypto').randomBytes(16).toString('hex'); remoteSeen.clear(); saveSettings(); push(); return true; });
@@ -693,7 +708,7 @@ const isNewer = (a, b) => { const x = verNum(a), y = verNum(b); for (let i = 0; 
 let updating = false, updateFile = null;
 const setUpd = o => { state.update = { ...(state.update || {}), ...o }; push(); };
 async function checkUpdate(manual) {
-  if (updating) return; updating = true;
+  if (updating || (state.perf && !manual)) return; updating = true;
   try {
     setUpd({ status: 'checking', error: '' });
     const res = await net.fetch(UPDATE_API, { headers: { 'User-Agent': 'FuxiHub-Updater', Accept: 'application/vnd.github+json' } });
@@ -736,6 +751,7 @@ ipcMain.handle('update-install', () => {
   require('child_process').spawn(updateFile, [], { detached: true, stdio: 'ignore' }).unref();
   setTimeout(() => app.quit(), 400); return true;
 });
+ipcMain.handle('set-gamemode', (_, v) => { settings.ui = mergeUi({ ...settings.ui, gameMode: !!v }); saveSettings(); if (!v) setPerf(false); else checkFullscreen().catch(() => {}); push(); return settings.ui.gameMode; });
 ipcMain.handle('set-update', (_, p) => { settings.update = mergeUpdate({ ...settings.update, ...(p || {}) }); saveSettings(); push(); return settings.update; });
 ipcMain.handle('open-release-page', () => { const u = state.update && state.update.page; if (u && /^https:\/\/github\.com\//.test(u)) shell.openExternal(u); });
 setTimeout(() => { if (!process.env.FUXI_SHOTS || process.env.FUXI_UPDATE_API) checkUpdate(false); }, 20000);
@@ -745,6 +761,19 @@ setInterval(() => { if (!process.env.FUXI_SHOTS && Date.now() - settings.update.
 const MEDIA_LABEL = { spotify: 'Spotify', youtube: 'YouTube' };
 const SPOTIFY_WEB = /spotify/i, YT_TITLE = /(?:^|\s[-–|•]\s)YouTube(?!\s*(?:Music|Studio|Kids|TV))\s*$|^YouTube$/i;
 const BROWSER_PROCS = /^(msedge|chrome|firefox|brave|opera|vivaldi|arc|opera_gx)$/i;
+// Mídia do Windows (a do painel de volume): título, artista, capa e estado do Spotify mesmo escondido na bandeja. Só consulta se o Spotify estiver aberto.
+let smtc = null, smtcKey = '', smtcAt = 0;
+async function readSmtc(hint) {
+  const same = smtc && smtcKey;                                                    // a capa só é baixada quando a música muda
+  const r = await run('mediactl.exe', ['info', hint, same ? 'noart' : 'art']);
+  let j = null; try { j = JSON.parse(r.out); } catch {}
+  if (!j || j.error || !j.title) { smtc = null; smtcKey = ''; return null; }
+  const key = j.app + '|' + j.title + '|' + j.artist;
+  if (key !== smtcKey) { if (r.out && !j.art) { const r2 = await run('mediactl.exe', ['info', hint, 'art']); try { const j2 = JSON.parse(r2.out); if (j2.art) j.art = j2.art; } catch {} } smtc = { ...j }; smtcKey = key; }
+  else smtc = { ...smtc, status: j.status, canNext: j.canNext, canPrev: j.canPrev };
+  smtcAt = Date.now(); return smtc;
+}
+let npLastPlay = 0;
 async function detectMedia(wins, names) {
   const m = settings.media; if (!m.enabled) { state.media = null; return null; }
   const now = Date.now(), found = { spotify: null, youtube: null };
@@ -759,7 +788,9 @@ async function detectMedia(wins, names) {
   const browserActive = active ? [...active].some(n => BROWSER_PROCS.test(n)) : false;
   const spWin = wins.find(w => /^spotify$/i.test(w.name) && w.title && !/^(spotify( (free|premium))?|spotify$|chrome|gdi\+|default ime|msctfime)/i.test(w.title.trim()) && / - /.test(w.title));      // no app do Spotify, a janela mostra "Artista - Música" enquanto toca
   const spMeta = spWin ? (() => { const i = spWin.title.indexOf(' - '); return { artist: spWin.title.slice(0, i).trim(), title: spWin.title.slice(i + 3).trim() }; })() : null;
-  if (spApp) put('spotify', spMeta ? 'playing' : (active && active.has('spotify') ? 'playing' : 'open'), 'app', spMeta || {});
+  let sm = null; if (spApp && settings.nowplaying.enabled !== false) { try { sm = await readSmtc('spotify'); } catch {} }
+  if (sm && /spotify/i.test(sm.app)) { put('spotify', sm.status === 'Playing' ? 'playing' : 'open', 'app', { title: sm.title, artist: sm.artist, smtc: true, paused: sm.status !== 'Playing', canNext: sm.canNext, canPrev: sm.canPrev }); if (sm.status === 'Playing') npLastPlay = Date.now(); }
+  else if (spApp) put('spotify', spMeta ? 'playing' : (active && active.has('spotify') ? 'playing' : 'open'), 'app', spMeta || {});
   if (webSp && !found.spotify) put('spotify', browserActive ? 'playing' : 'open', 'navegador');
   if (webYt && !found.youtube) put('youtube', browserActive ? 'playing' : 'open', 'navegador');
   const ok = site => { const c = found[site], cfg = m[site]; return cfg.enabled && c && (cfg.when === 'open' || c.state === 'playing') && findProfile(cfg.preset) ? c : null; };
@@ -786,7 +817,7 @@ const restoreTarget = () => (curRule && findProfile(curRule.preset) ? curRule.pr
 function handleDetection(id, cloud) {
   const svc = cloud ? cloud.svc : null, prevSvc = state.cloud ? state.cloud.svc : null;
   if (id === state.game && svc === prevSvc) return;
-  const prev = state.game, now = Date.now();
+  const prev = state.game, now = Date.now(), sessMs = prev && playStart ? now - playStart : 0, wasCloud = state.cloud ? state.cloud.label : null;
   trackPlay(prev, id);
   if (prev && state.cloud && cloudCur) { cloudCur.ms = now - cloudCur.start; pushCloudLog(cloudCur); cloudCur = null; }       // fecha a sessão cloud anterior
   state.cloud = cloud ? { svc, name: cloud.name, label: SVC_LABEL[svc] } : null;
@@ -794,14 +825,84 @@ function handleDetection(id, cloud) {
   if (id && cloud) cloudCur = { svc, name: state.gameName || cloud.name, id, start: now, ms: 0 };
   if (settings.auto) applyEq(effective(id) || restoreTarget()); else push();
   applySurround();                                                       // o nível de surround pode mudar por jogo
-  if (id) notifyGame(id); else if (prev) notifyGameEnd(prev);
+  if (id) notifyGame(id); else if (prev) { notifyGameEnd(prev); if (sessMs >= 60000) setTimeout(() => notifySummary(prev, sessMs, wasCloud), 3500); }
 }
 let cloudCur = null;
 function pushCloudLog(e) { if (!e.ms || e.ms < 20000) return; settings.cloud.log.unshift({ ...e }); settings.cloud.log = settings.cloud.log.slice(0, 100); saveSettings(); }
 
 const scan = args => new Promise(res => execFile(native('procscan.exe'), args, { windowsHide: true, maxBuffer: 8 * 1024 * 1024, encoding: 'utf8' }, (err, out) => res(err ? null : out || '')));
 const parseWins = out => (out || '').split('\n').map(l => l.split('\t')).filter(a => a.length >= 3).map(a => ({ pid: +a[0], name: a[1], title: (a[2] || '').trim() }));
+// ---------- Modo jogo (economia em tela cheia) ----------
+// Quando há um aplicativo em tela cheia na frente (jogo, vídeo, apresentação), o hub fica só com o essencial: troca de preset, atalhos, avisos e microfone.
+// A estética (animações, espectro, fone animado, brilhos) pára; ao sair da tela cheia tudo volta sozinho.
+let fsHits = 0, fsLast = '';
+const OWN_PROC = /^(electron|fuxi hub|fuxihub)$/i;
+function setPerf(on) { if (!!state.perf === on) return; state.perf = on; npSig = ''; badgeKey = ''; try { updateNowPlaying(); updateBadge(); } catch {} push(); }
+async function checkFullscreen() {
+  if (!settings.ui.gameMode) { fsHits = 0; return setPerf(false); }
+  const o = await scan(['fs']); const [f, name] = String(o || '0').split('\t'), nm = (name || '').trim().toLowerCase(), ui = settings.ui;
+  let on = f === '1' && !OWN_PROC.test(nm);
+  if (on && fsLast !== nm) { fsLast = nm; state.fsLast = nm; push(); }                                       // último programa visto em tela cheia (a tela de ajustes oferece "ignorar" / "sempre")
+  if (on && !state.game && ui.gmIgnore.includes(nm)) on = false;                                              // vídeo/navegador em tela cheia não ativa (a não ser que um jogo, até na nuvem, esteja aberto)
+  if (!on && nm && !OWN_PROC.test(nm) && ui.gmAlways.includes(nm)) on = true;                                // programa da lista "sempre": ativa mesmo em janela
+  fsHits = on ? fsHits + 1 : 0;
+  if (on && fsHits >= 2) setPerf(true); else if (!on) setPerf(false);                 // entra depois de 2 leituras seguidas (evita piscar); sai na hora
+}
+// ---------- Bateria do fone ----------
+// O Windows guarda o nível que o fone Bluetooth informa (perfil Hands-Free). Lemos a cada 90 s, só enquanto o fone está conectado; sem informação, nada aparece.
+let batWarned = 100;
+async function checkBattery() {
+  if (state.perf) return;
+  const o = process.env.FUXI_FAKE_BAT ? 'Fuxi-H3\t' + process.env.FUXI_FAKE_BAT : await scan(['battery', 'fuxi']);   // FUXI_FAKE_BAT: só para testes
+  const lv = o ? o.split('\n').map(l => l.split('\t')).filter(a => a.length >= 2).map(a => +a[1]).filter(v => v >= 0 && v <= 100) : [];
+  const level = lv.length ? lv[0] : null, prev = state.battery ? state.battery.level : null;
+  if (level === null) { if (state.battery) { state.battery = null; badgeKey = ''; push(); } return; }
+  if (prev !== level) { state.battery = { level, at: Date.now() }; badgeKey = ''; push(); }
+  if (level > 25) batWarned = 100;
+  else if (level <= 10 && batWarned > 10) { batWarned = 10; notify('device', { id: 'battery', title: 'Bateria do fone: ' + level + '%', body: 'Muito baixa. Coloque para carregar.', icon: 'device', color: '#ff4655' }, true); }
+  else if (level <= 20 && batWarned > 20) { batWarned = 20; notify('device', { id: 'battery', title: 'Bateria do fone: ' + level + '%', body: 'Está acabando. Deixe um carregador por perto.', icon: 'device', color: '#ffb02e' }, true); }
+}
+// ---------- Jogos instalados (Steam, Epic, Riot) ----------
+// Jogos que o usuário adicionou à lista: entram como os da lista (preset "Jogos" como ponto de partida, editável) e já têm tema com a cor do jogo.
+const libscan = require('./libscan');
+let libCache = { items: [], ts: 0 };
+function registerUserGame(g) {
+  if (!g || DATA.games.some(x => x.id === g.id)) return;
+  const base = DATA.profiles.find(p => p.id === 'gaming') || DATA.profiles[0];
+  DATA.games.push({ id: g.id, name: g.name, tag: 'Seu jogo', color: g.color, exe: g.exe ? [g.exe] : [], eq: base.eq, f: base.f, q: base.q, t: base.t, comfort: base.comfort, user: true });
+  THEMES[g.id] = { accent: g.color, accent2: g.color, mood: 'vivid', radius: 18, artOpacity: .2 };
+  ALIAS[g.id] = [norm(g.name), norm(g.dir ? path.basename(g.dir) : g.name)].filter(Boolean);
+}
+const knownGame = g => {
+  const n = norm(g.name), d = g.dir ? norm(path.basename(g.dir)) : '', ex = (g.exe || '').toLowerCase();
+  if ((settings.ignoredGames || []).includes(n)) return true;
+  if (DATA.games.some(x => norm(x.name) === n || exeList(x).includes(ex && ex))) return true;
+  return Object.values(ALIAS).some(al => al.includes(n) || (d && al.includes(d)));
+};
+async function scanLibs() {
+  try { const all = await libscan.scan(); libCache = { items: all.filter(g => !knownGame(g)).map(g => ({ ...g, key: g.id, color: hashColor(g.name) })), ts: Date.now() }; } catch {}
+  state.lib = { items: libCache.items.map(g => ({ key: g.key, name: g.name, store: g.store, exe: g.exe, color: g.color })), ts: libCache.ts };
+  push(); return state.lib;
+}
+ipcMain.handle('lib-scan', () => scanLibs());
+ipcMain.handle('lib-add', async (_, key) => {
+  const g = libCache.items.find(x => x.key === key); if (!g) return false;
+  const u = { id: slug(g.name), name: g.name, color: g.color, exe: g.exe || '', dir: g.dir, store: g.store };
+  settings.userGames = (settings.userGames || []).filter(x => x.id !== u.id).concat(u).slice(-100);
+  registerUserGame(u); saveSettings(); state.lib = null; await scanLibs(); pollGames(); return u.id;
+});
+ipcMain.handle('lib-ignore', async (_, key) => {
+  const g = libCache.items.find(x => x.key === key); if (!g) return false;
+  settings.ignoredGames = [...new Set([...(settings.ignoredGames || []), norm(g.name)])].slice(-300); saveSettings(); await scanLibs(); return true;
+});
+ipcMain.handle('user-game-remove', (_, id) => {
+  settings.userGames = (settings.userGames || []).filter(x => x.id !== id);
+  const i = DATA.games.findIndex(x => x.id === id && x.user); if (i >= 0) DATA.games.splice(i, 1);
+  delete THEMES[id]; delete ALIAS[id]; delete settings.overrides[id]; delete settings.assign[id];
+  saveSettings(); scanLibs(); return true;
+});
 async function pollGames() {
+  checkFullscreen().catch(() => {});
   markToday();
   const [po, wo] = await Promise.all([scan([]), (settings.cloud.enabled || settings.media.enabled) ? scan(['windows']) : Promise.resolve('')]);
   if (!po) return;
@@ -831,7 +932,7 @@ async function pollGames() {
   }
 }
 
-function snapshot() { return { ...state, auto: settings.auto, notify: settings.notify, hotkeys: settings.hotkeys, hotkeyErrors, closeToTray: settings.closeToTray, autostart, intro: settings.intro, startup: settings.startup, favorites: settings.favorites, stats: settings.stats, ui: settings.ui, detectGeneric: settings.detectGeneric, audioSwitch: settings.audioSwitch, lastBackup, surroundCfg: settings.surround, hesuvi: hesuviInfo(), cloudCfg: settings.cloud, mediaCfg: settings.media, badgeCfg: settings.badge, npCfg: settings.nowplaying, packaged: app.isPackaged, gpu: GPU_ON, gpuSaved: settings.gpu === true, remoteCfg: { enabled: settings.remote.enabled, on: !!remoteSrv }, micFx: settings.micfx, updateCfg: settings.update, update: state.update || { status: 'idle' }, micApo: state.micApo || null, tutorial: settings.tutorial, ach: settings.ach, achSeeded: settings.achSeeded, usageDays: settings.usage.days, rules: settings.rules, rulesEnabled: settings.rulesEnabled, version: app.getVersion(), dataDir: app.getPath('userData'),
+function snapshot() { return { ...state, auto: settings.auto, notify: settings.notify, hotkeys: settings.hotkeys, hotkeyErrors, closeToTray: settings.closeToTray, autostart, intro: settings.intro, startup: settings.startup, favorites: settings.favorites, stats: settings.stats, ui: settings.ui, detectGeneric: settings.detectGeneric, audioSwitch: settings.audioSwitch, lastBackup, surroundCfg: settings.surround, hesuvi: hesuviInfo(), cloudCfg: settings.cloud, mediaCfg: settings.media, badgeCfg: settings.badge, npCfg: settings.nowplaying, packaged: app.isPackaged, news: newsFor(),  gpu: GPU_ON, gpuSaved: settings.gpu === true, remoteCfg: { enabled: settings.remote.enabled, on: !!remoteSrv }, micFx: settings.micfx, updateCfg: settings.update, update: state.update || { status: 'idle' }, micApo: state.micApo || null, tutorial: settings.tutorial, ach: settings.ach, achSeeded: settings.achSeeded, usageDays: settings.usage.days, rules: settings.rules, rulesEnabled: settings.rulesEnabled, version: app.getVersion(), dataDir: app.getPath('userData'),
   skipIntro: process.argv.includes('--hidden') || !!process.env.FUXI_SHOTS || winCreated > 1, noSound: !!process.env.FUXI_NO_SOUND,   /* início escondido (Windows) e testes não tocam a abertura */ profiles: allProfiles(), bands: BANDS, engine: { ...(state.engine || engineStatus()), registered: !!(state.apo && state.apo.fuxi), apoDevices: state.apo ? state.apo.count : 0 } }; }
 function push() { try { updateBadge(); } catch {} if (win && !win.isDestroyed()) win.webContents.send('state', snapshot()); if (mini && !mini.isDestroyed() && mini.isVisible()) mini.webContents.send('state', snapshot()); }
 let hotkeyErrors = {};
@@ -864,7 +965,8 @@ function ensureOverlay() {
 }
 // ---------- Selo de jogo ativo ----------
 let badgeWin = null, badgeReady = false, badgeLast = null, badgeKey = '', badgePreview = 0;
-function badgeData() {
+function badgeData() { const d = badgeData0(); if (d) d.bat = state.battery ? state.battery.level : null; return d; }      // + nível de bateria do fone (quando o Windows informa)
+function badgeData0() {
   const b = settings.badge; if (!b || !b.enabled) return null;
   let g = null, cloud = null, art = null, color = null, initials = '';
   if (Date.now() < badgePreview) { g = findProfile('fortnite') || findProfile(DATA.games[0].id); cloud = null; }
@@ -893,7 +995,7 @@ function ensureBadge() {
 }
 function updateBadge() {
   if (!settings || !settings.badge) return;
-  const d = badgeData(), b = settings.badge, key = JSON.stringify([d, b.pos, b.style, b.size, b.enabled]);
+  const d = badgeData(), b = settings.badge, key = JSON.stringify([d, b.pos, b.style, b.size, b.enabled, !!state.perf]);
   if (key === badgeKey) return; badgeKey = key;
   if (!d) {
     badgeLast = { show: false };
@@ -901,7 +1003,7 @@ function updateBadge() {
     return;
   }
   ensureBadge(); placeBadge();
-  badgeLast = { show: true, ...d, style: b.style, size: b.size };
+  badgeLast = { show: true, ...d, style: b.style, size: b.size, perf: !!state.perf };
   if (badgeReady) badgeWin.webContents.send('badge', badgeLast);
   if (!badgeWin.isVisible()) badgeWin.showInactive();
 }
@@ -913,27 +1015,28 @@ function npData() {
   const c = settings.nowplaying; if (!c || !c.enabled) return null;
   if (npPreview && Date.now() < npPreview.until) return { site: 'spotify', ...npPreview.track };
   const m = state.media; if (!m) return null;
-  const opts = ['spotify', c.youtube ? 'youtube' : null].filter(Boolean).map(s => m[s] && m[s].title ? { site: s, state: m[s].state === 'playing' ? 'playing' : 'paused', title: m[s].title, artist: m[s].artist || '', art: m[s].art || '' } : null).filter(Boolean);
-  return opts.find(o => o.state === 'playing') || null;                        // pausado: sem janela (cada janela é um processo)
+  const opts = ['spotify', c.youtube ? 'youtube' : null].filter(Boolean).map(s => m[s] && m[s].title ? { site: s, state: (m[s].state === 'playing' && !m[s].paused) ? 'playing' : 'paused', title: m[s].title, artist: m[s].artist || '', art: m[s].smtc ? ((smtc && smtc.art) || '') : (m[s].art || ''), ctl: !!m[s].smtc } : null).filter(Boolean);
+  const pl = opts.find(o => o.state === 'playing'); if (pl) return pl;
+  const pa = opts.find(o => o.ctl); return pa && Date.now() - npLastPlay < 90000 ? pa : null;      // pausado: o disco fica 90 s (para você poder dar play) e some; cada janela é um processo
 }
 function placeNp() {
   if (!npWin || npWin.isDestroyed()) return;
-  const wa = screen.getPrimaryDisplay().workArea, W = 380, H = 110, pos = settings.nowplaying.pos, m = 8;
+  const wa = screen.getPrimaryDisplay().workArea, W = 380, H = 130, pos = settings.nowplaying.pos, m = 8;
   npWin.setBounds({ x: /right$/.test(pos) ? wa.x + wa.width - W - m : wa.x + m, y: /^top/.test(pos) ? wa.y + m : wa.y + wa.height - H - m, width: W, height: H });
 }
 function ensureNp() {
   if (npWin && !npWin.isDestroyed()) return npWin;
   npReady = false;
-  npWin = new BrowserWindow({ width: 380, height: 110, show: false, frame: false, transparent: true, resizable: false, movable: false, focusable: false, skipTaskbar: true, alwaysOnTop: true, hasShadow: false, fullscreenable: false,
+  npWin = new BrowserWindow({ width: 380, height: 130, show: false, frame: false, transparent: true, resizable: false, movable: false, focusable: false, skipTaskbar: true, alwaysOnTop: true, hasShadow: false, fullscreenable: false,
     webPreferences: { preload: path.join(__dirname, 'preload-np.js'), contextIsolation: true } });
-  npWin.setAlwaysOnTop(true, 'screen-saver'); npWin.setIgnoreMouseEvents(true); npWin.setMenuBarVisibility(false); global.__np = npWin;
+  npWin.setAlwaysOnTop(true, 'screen-saver'); npWin.setIgnoreMouseEvents(true, { forward: true }); npWin.setMenuBarVisibility(false); global.__np = npWin;
   npWin.webContents.on('did-finish-load', () => { npReady = true; if (npLast) npWin.webContents.send('np', npLast); });
   npWin.loadFile(path.join(__dirname, 'src', 'np.html'));
   return npWin;
 }
 function updateNowPlaying() {
   if (!settings || !settings.nowplaying) return;
-  const d = npData(), c = settings.nowplaying, sig = JSON.stringify([d, c.pos, c.size, c.showTitle, settings.ui.lang]);
+  const d = npData(), c = settings.nowplaying, sig = JSON.stringify([d && { ...d, art: d.art ? d.art.length : 0 }, c.pos, c.size, c.showTitle, settings.ui.lang, !!state.perf]);
   if (sig === npSig) return; npSig = sig;
   if (!d) {
     npLast = { show: false };
@@ -941,15 +1044,21 @@ function updateNowPlaying() {
     return;
   }
   ensureNp(); placeNp();
-  npLast = { show: true, ...d, pos: c.pos, size: c.size, showTitle: c.showTitle, lang: settings.ui.lang };
+  npLast = { show: true, ...d, pos: c.pos, size: c.size, showTitle: c.showTitle, lang: settings.ui.lang, perf: !!state.perf };
   if (npReady) npWin.webContents.send('np', npLast);
   if (!npWin.isVisible()) npWin.showInactive();
 }
+ipcMain.handle('np-cmd', async (_, c) => {
+  if (!['prev', 'toggle', 'next', 'play', 'pause'].includes(c)) return false;
+  const r = await run('mediactl.exe', ['cmd', c, 'spotify']); npLastPlay = Date.now();
+  setTimeout(pollGames, 350); return /ok/.test(r.out);
+});
+ipcMain.on('np-hover', (_, on) => { if (npWin && !npWin.isDestroyed()) npWin.setIgnoreMouseEvents(!on, { forward: true }); });
 ipcMain.handle('set-nowplaying', (_, p) => { settings.nowplaying = mergeNp({ ...settings.nowplaying, ...(p || {}) }); saveSettings(); npSig = ''; updateNowPlaying(); push(); return settings.nowplaying; });
 ipcMain.handle('test-np', () => {                                                    // prévia: duas músicas de exemplo, trocando a cada 4 s
   const T = [{ title: 'Midnight City', artist: 'M83' }, { title: 'Blinding Lights', artist: 'The Weeknd' }, { title: 'Levitating', artist: 'Dua Lipa' }];
   const until = Date.now() + 13000; let i = 0;
-  const step = () => { if (Date.now() >= until) { npPreview = null; npSig = ''; updateNowPlaying(); return; } npPreview = { until, track: { state: 'playing', ...T[i++ % T.length], art: '' } }; npSig = ''; updateNowPlaying(); setTimeout(step, 4200); };
+  const step = () => { if (Date.now() >= until) { npPreview = null; npSig = ''; updateNowPlaying(); return; } npPreview = { until, track: { state: 'playing', ctl: true, ...T[i++ % T.length], art: '' } }; npSig = ''; updateNowPlaying(); setTimeout(step, 4200); };
   step(); return true;
 });
 // kind: game | gameEnd | device | preset | mic.  force = ignora as chaves de ligar/desligar (usado nos testes da tela Ajustes)
@@ -958,9 +1067,9 @@ function notify(kind, o, force) {
   if (!force && (!n.enabled || !n.types[kind])) return;
   if (!force && n.dnd && state.game && ['preset', 'mic', 'device', 'info'].includes(kind) && !n.dndAllow[kind === 'info' ? 'preset' : kind]) return;   // jogando: não incomoda
   const color = o.color || '#2ef2ff';
-  const p = { id: o.id || kind, kind, soundKey: o.soundKey || kind, soundFile: o.soundFile || null, cloud: o.cloud || null, title: o.title, body: o.body || '', color, rgb: hexRgb(color).join(','),
+  const p = { summary: o.summary || null, id: o.id || kind, kind, soundKey: o.soundKey || kind, soundFile: o.soundFile || null, cloud: o.cloud || null, title: o.title, body: o.body || '', color, rgb: hexRgb(color).join(','),
     art: o.art || null, banner: o.banner || null, initials: o.initials || '', icon: o.icon || null, eq: o.eq || null,
-    duration: n.duration * 1000, position: n.position, style: n.style, anim: n.anim, sound: !!n.sound && !process.env.FUXI_NO_SOUND, volume: n.volume };   // FUXI_NO_SOUND: só para testes
+    duration: n.duration * 1000, position: n.position, style: n.style, anim: n.anim, sound: !!n.sound && !process.env.FUXI_NO_SOUND && kind !== 'summary', volume: n.volume };   // FUXI_NO_SOUND: só para testes
   const w = ensureOverlay(); placeOverlay();
   clearTimeout(overlayHideTimer); clearTimeout(overlayIdle);
   if (!w.isVisible()) w.showInactive();
@@ -975,9 +1084,8 @@ const eqOf = p => (p ? { f: p.f, g: p.eq, q: p.q, t: p.t } : null);
 
 // som de entrada de cada jogo: se existir um arquivo "<id-do-jogo>.mp3/.wav/.ogg…" na pasta de sons, toca ele; senão, a assinatura sintetizada do jogo
 const SOUND_EXT = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'webm'];
-function soundFileFor(id) {
-  const d = path.join(app.getPath('userData'), 'sounds');
-  for (const e of SOUND_EXT) { const f = path.join(d, `${id}.${e}`); if (fs.existsSync(f)) return pathToFileURL(f).href; }
+function soundFileFor(id) {                                                    // 1) o seu (pasta de sons do usuario) vale mais · 2) o som que vem no app (assets/sounds)
+  for (const d of [path.join(app.getPath('userData'), 'sounds'), path.join(__dirname, 'assets', 'sounds')]) for (const e of SOUND_EXT) { const f = path.join(d, id + '.' + e); if (fs.existsSync(f)) return pathToFileURL(f).href; }
   return null;
 }
 const gameSnd = id => (settings.notify.gameSounds === false || !DATA.games.some(g => g.id === id)) ? {} : { soundKey: 'game:' + id, soundFile: soundFileFor(id) };
@@ -1083,6 +1191,11 @@ function notifyGameEnd(id) {
   const g = findProfile(id), cur = findProfile(state.active); if (!g) return;
   notify('gameEnd', { id: 'game', title: g.name, body: settings.auto && cur ? `Voltando ao preset ${cur.name}` : 'Jogo fechado', color: g.color, art: g.iconArt, banner: g.banner, initials: ini(g.name), eq: settings.auto ? eqOf(cur) : null });
 }
+// Resumo da sessão: cartão com a arte do jogo, quanto tempo você jogou e o histórico dele (aparece logo depois do aviso de saída; só para sessões de 1 min ou mais)
+function notifySummary(id, ms, cloud) {
+  const g = findProfile(id); if (!g) return; const st = settings.stats[id] || { count: 0, ms: 0 }, ap = findProfile(state.active);
+  notify('summary', { id: 'summary', title: g.name, body: '', color: g.color, art: g.iconArt, banner: g.art || g.banner, initials: ini(g.name), cloud, summary: { ms, total: st.ms || 0, count: st.count || 0, preset: ap ? ap.name : '' } });
+}
 function notifyDevice(known) {
   notify('device', known
     ? { id: 'device', soundKey: 'deviceOn', title: 'Fuxi H3 conectado', body: 'USB · reconhecido', icon: 'device', color: '#2ef2ff' }
@@ -1097,6 +1210,7 @@ ipcMain.handle('test-notify', (_, kind, gameId) => {
   const g = (gameId && findProfile(gameId)) || findProfile('valorant'), cur = findProfile(state.active) || findProfile('default');
   if (kind === 'game') notify('game', { id: 'test-game', ...gameSnd(g.id), title: g.name, body: `Preset aplicado: ${g.name}`, color: g.color, art: g.iconArt, banner: g.banner, initials: ini(g.name), eq: eqOf(g) }, true);
   else if (kind === 'gameEnd') notify('gameEnd', { id: 'test-game', title: g.name, body: `Voltando ao preset ${cur.name}`, color: g.color, art: g.iconArt, banner: g.banner, initials: ini(g.name), eq: eqOf(cur) }, true);
+  else if (kind === 'summary') notify('summary', { id: 'test-summary', title: g.name, body: '', color: g.color, art: g.iconArt, banner: g.art || g.banner, initials: ini(g.name), summary: { ms: 5025000, total: 41200000, count: 14, preset: cur.name } }, true);
   else if (kind === 'deviceOn') { notifyDeviceForce(true); }
   else if (kind === 'deviceOff') { notifyDeviceForce(false); }
   else if (kind === 'preset') notify('preset', { id: 'test-preset', title: cur.name, body: 'Preset ativo', icon: 'preset', color: cur.color, eq: eqOf(cur) }, true);
@@ -1497,9 +1611,11 @@ app.whenReady().then(() => {
   registerHotkeys();
   refreshAutostart().then(push);
   if (shots) shots.run(win, app, () => overlay);
-  const loop = (fn, visMs, hidMs) => { let busy = false; const tick = async () => { if (!busy) { busy = true; try { await fn(); } catch {} busy = false; } setTimeout(tick, win && !win.isDestroyed() && win.isVisible() ? visMs : hidMs); }; setTimeout(tick, visMs); };
+  const loop = (fn, visMs, hidMs) => { let busy = false; const tick = async () => { if (!busy) { busy = true; try { await fn(); } catch {} busy = false; } setTimeout(tick, win && !win.isDestroyed() && win.isVisible() && !state.perf ? visMs : hidMs); }; setTimeout(tick, visMs); };
   loop(() => new Promise(r => { pollDevice(); setTimeout(r, 1500); }), 5000, 10000);       // fone: 5 s com a janela aberta, 10 s na bandeja
   loop(pollGames, 3000, 4000);
+  setTimeout(() => checkBattery().catch(() => {}), 6000); loop(checkBattery, 90000, 120000);                 // bateria do fone
+  setTimeout(() => { if (!state.perf) scanLibs().catch(() => {}); }, 20000); setInterval(() => { if (!state.perf) scanLibs().catch(() => {}); }, 12 * 3600e3);   // jogos instalados (Steam/Epic/Riot)
 });
 app.on('will-quit', () => globalShortcut.unregisterAll());
 app.on('before-quit', () => { quitting = true; if (previewActive) { try { applyEq(state.active); } catch {} } });   // nunca deixa uma prévia não salva no som

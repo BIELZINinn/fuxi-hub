@@ -1,0 +1,192 @@
+{
+    "fortnite":  {
+                     "accent":  "#33b8ff",
+                     "accent2":  "#ffb347",
+                     "art":  "fortnite.jpg",
+                     "artOpacity":  0.46,
+                     "pos":  "center 32%",
+                     "tint":  "#0b5fae",
+                     "mood":  "vivid",
+                     "radius":  24
+                 },
+    "valorant":  {
+                     "accent":  "#ff4655",
+                     "accent2":  "#a78bfa",
+                     "art":  "valorant.jpg",
+                     "artOpacity":  0.40,
+                     "pos":  "center 30%",
+                     "tint":  "#7a0f23",
+                     "mood":  "tactical",
+                     "radius":  4
+                 },
+    "cs2":  {
+                "accent":  "#ff9f1c",
+                "accent2":  "#5fa8ff",
+                "art":  "cs2.jpg",
+                "artOpacity":  0.40,
+                "pos":  "center 40%",
+                "tint":  "#5a3306",
+                "mood":  "tactical",
+                "radius":  4
+            },
+    "pubg":  {
+                 "accent":  "#ffb02e",
+                 "accent2":  "#ff6b35",
+                 "art":  "pubg.jpg",
+                 "artOpacity":  0.42,
+                 "pos":  "center 45%",
+                 "tint":  "#6a3a06",
+                 "mood":  "dark",
+                 "radius":  12
+             },
+    "gow":  {
+                "accent":  "#7fd3e8",
+                "accent2":  "#e0523f",
+                "art":  "gow.jpg",
+                "artOpacity":  0.40,
+                "pos":  "center 40%",
+                "tint":  "#0d3a4a",
+                "mood":  "dark",
+                "radius":  10
+            },
+    "apex":  {
+                 "accent":  "#ff4b3e",
+                 "accent2":  "#5fd0ff",
+                 "art":  "apex.jpg",
+                 "artOpacity":  0.36,
+                 "pos":  "center 50%",
+                 "tint":  "#5a1410",
+                 "mood":  "tactical",
+                 "radius":  6
+             },
+    "warzone":  {
+                    "accent":  "#9fb6cc",
+                    "accent2":  "#e5483f",
+                    "art":  "warzone.jpg",
+                    "artOpacity":  0.45,
+                    "pos":  "center 22%",
+                    "tint":  "#10161d",
+                    "mood":  "dark",
+                    "radius":  8
+                },
+    "overwatch":  {
+                      "accent":  "#f99e1a",
+                      "accent2":  "#4aa8ff",
+                      "art":  "overwatch.jpg",
+                      "artOpacity":  0.36,
+                      "pos":  "center 40%",
+                      "tint":  "#1a4f9a",
+                      "mood":  "vivid",
+                      "radius":  20
+                  },
+    "r6":  {
+               "accent":  "#f0c929",
+               "accent2":  "#5aa9ff",
+               "art":  "r6.jpg",
+               "artOpacity":  0.42,
+               "pos":  "center 35%",
+               "tint":  "#1a2230",
+               "mood":  "tactical",
+               "radius":  4
+           },
+    "lol":  {
+                "accent":  "#c8aa6e",
+                "accent2":  "#0ac8b9",
+                "art":  "lol.jpg",
+                "artOpacity":  0.46,
+                "pos":  "center 45%",
+                "tint":  "#053a3f",
+                "mood":  "dark",
+                "radius":  10
+            },
+    "gta5":  {
+                 "accent":  "#ffa63d",
+                 "accent2":  "#2bd4c6",
+                 "art":  "gta5.jpg",
+                 "artOpacity":  0.38,
+                 "pos":  "center 35%",
+                 "tint":  "#7a3a0c",
+                 "mood":  "vivid",
+                 "radius":  14
+             },
+    "bf2042":  {
+                   "tint":  "#0f2a4a",
+                   "art":  "bf2042.jpg",
+                   "accent2":  "#ff8a2e",
+                   "pos":  "center 40%",
+                   "mood":  "tactical",
+                   "accent":  "#4fa3ff",
+                   "radius":  4,
+                   "artOpacity":  0.38
+               },
+    "dota2":  {
+                  "tint":  "#142a3a",
+                  "art":  "dota2.jpg",
+                  "accent2":  "#4be39a",
+                  "pos":  "center 45%",
+                  "mood":  "dark",
+                  "accent":  "#e0463a",
+                  "radius":  10,
+                  "artOpacity":  0.42
+              },
+    "cyberpunk":  {
+                      "tint":  "#4a0f4f",
+                      "art":  "cyberpunk.jpg",
+                      "accent2":  "#19e3ff",
+                      "pos":  "center 35%",
+                      "mood":  "tactical",
+                      "accent":  "#ff2e97",
+                      "radius":  3,
+                      "artOpacity":  0.44
+                  },
+    "rocketleague":  {
+                         "tint":  "#2a1a6a",
+                         "art":  "rocketleague.jpg",
+                         "accent2":  "#c24bff",
+                         "pos":  "center 40%",
+                         "mood":  "vivid",
+                         "accent":  "#3d8bff",
+                         "radius":  20,
+                         "artOpacity":  0.4
+                     },
+    "witcher3":  {
+                     "tint":  "#0b2a4a",
+                     "art":  "witcher3.jpg",
+                     "accent2":  "#ff9a3c",
+                     "pos":  "center 35%",
+                     "mood":  "dark",
+                     "accent":  "#5cb8ff",
+                     "radius":  10,
+                     "artOpacity":  0.46
+                 },
+    "eldenring":  {
+                      "tint":  "#3a2a08",
+                      "art":  "eldenring.jpg",
+                      "accent2":  "#6fb5a8",
+                      "pos":  "center 35%",
+                      "mood":  "dark",
+                      "accent":  "#e8b84a",
+                      "radius":  10,
+                      "artOpacity":  0.46
+                  },
+    "rdr2":  {
+                 "tint":  "#6a2c08",
+                 "art":  "rdr2.jpg",
+                 "accent2":  "#c9783a",
+                 "pos":  "center 40%",
+                 "mood":  "dark",
+                 "accent":  "#ff9a3c",
+                 "radius":  12,
+                 "artOpacity":  0.44
+             },
+    "tarkov":  {
+                   "tint":  "#3a2d0a",
+                   "art":  "tarkov.jpg",
+                   "accent2":  "#7da35a",
+                   "pos":  "center 40%",
+                   "mood":  "dark",
+                   "accent":  "#d9b24a",
+                   "radius":  8,
+                   "artOpacity":  0.44
+               }
+}

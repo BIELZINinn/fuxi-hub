@@ -54,7 +54,7 @@ Tudo roda **localmente no seu PC**: não há conta, nuvem própria, telemetria n
 - **Estilos do app**: AMOLED, Vidro, Neon e Papel (tema claro), com transição animada.
 - **Cor do app**: automática (segue o preset) ou fixa. Três cores de fone: branco, preto e branco, e preto.
 - **Seu perfil**: horas jogadas, sequência de dias, jogos mais jogados e 15 conquistas.
-- **Tocando agora**: um disco do Spotify girando num canto da tela, que dá uma voltinha e mostra o nome a cada música nova (na versão web, com a capa do álbum; o hub baixa a capa direto do site do Spotify).
+- **Tocando agora**: mini player do Spotify (lê a mídia do Windows, mesmo com o app na bandeja): disco girando num canto da tela, que dá uma voltinha com botões de anterior, pausar e próxima ao passar o mouse, e mostra o nome a cada música nova (na versão web, com a capa do álbum; o hub baixa a capa direto do site do Spotify).
 - **Ajuste do microfone**: ganho, corte de graves e equalização da voz, aplicados pelo Equalizer APO sem mexer na saída de som.
 - **Atualização automática**: o hub confere o GitHub, baixa a versão nova em segundo plano, confere o SHA-256 e instala quando você aceitar.
 - **Controle pelo celular**: QR code para abrir uma página na sua rede Wi-Fi e trocar preset, volume e microfone sem sair do jogo (desligado por padrão, protegido por um código secreto).
@@ -115,6 +115,9 @@ O Fuxi Hub foi feito para ficar na bandeja gastando pouco: ao fechar a janela (X
 
 - A **aceleração por GPU vem desligada** por padrão (economiza cerca de 500 MB). Quem preferir as animações mais fluidas e o 3D mais suave liga em Configurações → Geral → Desempenho (o app reinicia).
 - Avisos, selo de jogo, disco do Spotify e mini-janela só existem enquanto aparecem.
+- **Modo jogo:** com um aplicativo em tela cheia, o hub fica só com o essencial (preset, atalhos, avisos, microfone) e deixa a parte visual parada. Volta ao normal ao sair da tela cheia. Dá para desligar em Configurações → Geral → Desempenho, e há uma lista de exceções: vídeos e navegador em tela cheia não ligam o modo, e você pode escolher programas que sempre ligam.
+- **Bateria do fone:** mostrada na tela inicial e no selo do jogo, com aviso aos 20% e 10% (quando o Windows informa o nível do fone Bluetooth).
+- **Jogos instalados:** a aba Jogos procura jogos da Steam, Epic e Riot sem preset e deixa adicionar com um clique.
 
 ## Privacidade
 
@@ -155,6 +158,10 @@ tools/                 scripts de desenvolvimento (capturas de tela, imagens, si
 - As traduções para **inglês e espanhol** foram escritas à mão e cobrem a interface e os avisos; alguns textos raros podem aparecer em português. Sugestões de correção são bem-vindas.
 - As cores *preto* e *preto e branco* do fone na tela inicial são ilustrações do app, e o **modelo 3D** é uma interpretação estilizada do Fuxi H3, não uma cópia fiel.
 - O **controle pelo celular** usa HTTP na rede local, sem criptografia: ligue só em redes em que você confia.
+
+## Sons de entrada
+
+O app traz sons de entrada para Fortnite, Valorant, CS2, PUBG, Apex Legends e Rocket League, cortados de trechos de áudio ligados a esses jogos e músicas. Eles pertencem aos seus donos e estão aqui só para identificação e uso pessoal. Se você é dono de algum e quer a remoção, abra uma *issue*. Você pode trocar qualquer som colocando um arquivo com o id do jogo (por exemplo ortnite.mp3) na pasta de sons do app.
 
 ## Avisos legais
 

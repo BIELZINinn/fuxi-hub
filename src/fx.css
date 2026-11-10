@@ -262,3 +262,124 @@ html[data-style=glass] body.sw .card,html[data-style=glass] body.sw .mrow,html[d
 
 /* sem GPU: animacoes viram estado final (como em Reduzir animacoes); transicoes curtas continuam */
 body.sw main *,body.sw main *:before,body.sw main *:after,body.sw .rail *,body.sw .rail *:before,body.sw .rail *:after,body.sw .titlebar *,body.sw .amb *,body.sw #viewer *{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}
+
+/* celular no Início (canto superior esquerdo) */
+.qrh{position:absolute;left:24px;top:14px;z-index:4}
+.qrb{display:flex;align-items:center;gap:8px;padding:8px 15px 8px 12px;border-radius:30px;border:1px solid #26262e;background:rgba(8,9,11,.9);font-size:12.5px;color:#cfcfd6;transition:.3s var(--spring)}
+.qrb svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.qrb:hover{transform:translateY(-2px);color:#fff;border-color:#3a5560}.qrh.live .qrb{border-color:color-mix(in srgb,var(--ac) 55%,#1b1b20);color:var(--ac)}
+.qrp{position:absolute;left:0;top:46px;width:260px;padding:16px;border-radius:20px;border:1px solid color-mix(in srgb,var(--ac) 40%,#1b1b20);background:rgba(8,9,11,.96);box-shadow:0 24px 60px -16px #000,0 0 40px -16px var(--ac);
+  opacity:0;transform:translateY(-8px) scale(.94);transform-origin:top left;pointer-events:none;transition:opacity .3s,transform .45s cubic-bezier(.2,1.2,.3,1)}
+.qrh.open .qrp{opacity:1;transform:none;pointer-events:auto}
+.qrp b{display:block;font-size:13.5px}.qrp small{display:block;margin:4px 0 12px;font-size:11.5px;line-height:1.5;color:var(--mut)}
+.qrbox{width:228px;height:228px;border-radius:14px;overflow:hidden;background:#fff;padding:8px}.qrbox:empty{display:none}.qrbox svg{display:block;width:100%;height:100%}
+.qrp code{display:block;margin-top:10px;font:10.5px Consolas,monospace;color:#9fe9ef;word-break:break-all;-webkit-user-select:text;user-select:text}.qrp code:empty{display:none}
+.qrbtns{display:flex;gap:8px;margin-top:12px}.qrbtns .ghost{padding:7px 14px;font-size:12px}.qrbtns [hidden]{display:none}
+
+/* a caixa da imagem do fone (maior que a foto) cobria as bolinhas de cor e o botao 3D e engolia o clique */
+.hero3d,.hp,.hpm,.shine,.scan,.hwave,.hmic,#h3d,#spHome,.gbg{pointer-events:none}
+.herotext{z-index:6}
+.hcols,.hcols button,.h3btn{pointer-events:auto}
+
+.quick{gap:10px;padding:0 24px}.q{padding:9px 16px}
+
+/* tema por jogo */
+#gameBg{position:fixed;inset:0;z-index:0;pointer-events:none;background-size:cover;background-position:center;opacity:0;transition:opacity 1.4s ease;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.55) 30%,#000 100%),linear-gradient(180deg,#000 0,#000 60%,transparent 100%);-webkit-mask-composite:source-in;mask-composite:intersect}
+#gameBg.on{opacity:var(--gop,.2);background-position:var(--gpos,center)}
+#gameBg:after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 70% 20%,transparent,#000 85%)}
+body.gtheme .rail,body.gtheme .titlebar{background:rgba(0,0,0,.8)}
+body.gtheme main{z-index:1}
+
+/* novidades */
+#news{position:fixed;inset:0;z-index:190;display:grid;place-items:center;background:rgba(0,0,0,.72);opacity:0;transition:opacity .35s}
+#news.on{opacity:1}
+.nwc{width:min(520px,92vw);max-height:86vh;overflow:auto;border-radius:26px;border:1px solid color-mix(in srgb,var(--ac) 40%,#1b1b20);background:linear-gradient(180deg,#0c0f11,#07080a);box-shadow:0 30px 90px -20px #000,0 0 70px -30px var(--ac);padding:26px 28px 22px;transform:translateY(26px) scale(.96);transition:transform .6s cubic-bezier(.2,1.1,.3,1)}
+#news.on .nwc{transform:none}
+.nwh small{display:block;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--ac)}.nwh h2{margin:6px 0 16px;font-size:26px;font-weight:300;letter-spacing:.06em}
+#news ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+#news li{display:flex;gap:14px;align-items:flex-start;opacity:0;transform:translateY(12px);animation:fxUp .55s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:calc(var(--i)*90ms + 250ms)}
+#news li i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:600 12px/1 "Segoe UI",sans-serif;font-style:normal;color:#001;background:var(--ac);box-shadow:0 0 14px var(--acg)}
+#news li b{display:block;font-size:14.5px}#news li span{display:block;margin-top:2px;font-size:12.5px;line-height:1.55;color:#a8a8b4}
+.nwf{display:flex;justify-content:flex-end;margin-top:20px}.nwf .solid{margin-left:0}
+
+/* ===== tema "vivid" (Fortnite): colorido, arredondado, com duas cores ===== */
+body[data-mood=vivid] #gameBg:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,color-mix(in srgb,var(--gtint) 55%,transparent),transparent 55%)}
+body[data-mood=vivid] #gameBg:after{background:radial-gradient(130% 100% at 60% 15%,transparent 35%,#000 92%)}
+body[data-mood=vivid] .card,body[data-mood=vivid] .mrow,body[data-mood=vivid] .svc,body[data-mood=vivid] .cmc,body[data-mood=vivid] .stt,body[data-mood=vivid] .ach,body[data-mood=vivid] .now{border-radius:var(--rad);
+  background:linear-gradient(150deg,color-mix(in srgb,var(--ac) 13%,rgba(6,9,14,.9)),color-mix(in srgb,var(--ac2) 7%,rgba(6,8,12,.92)));border-color:color-mix(in srgb,var(--ac) 32%,rgba(255,255,255,.06))}
+body[data-mood=vivid] .card:hover{box-shadow:0 14px 40px -16px var(--ac),0 0 0 1px color-mix(in srgb,var(--ac2) 30%,transparent)}
+body[data-mood=vivid] .solid{background:linear-gradient(110deg,var(--ac),var(--ac2));border-color:transparent;color:#05121f}
+body[data-mood=vivid] .ph h1:after{width:64px;background:linear-gradient(90deg,var(--ac),var(--ac2));box-shadow:0 0 14px var(--acg)}
+body[data-mood=vivid] .rind{background:linear-gradient(180deg,var(--ac),var(--ac2));box-shadow:0 0 16px var(--ac)}
+body[data-mood=vivid] .nav.on{background:linear-gradient(145deg,color-mix(in srgb,var(--ac) 22%,#050507),color-mix(in srgb,var(--ac2) 12%,#050507));border-radius:calc(var(--rad) - 8px)}
+body[data-mood=vivid] .q,body[data-mood=vivid] .ghost,body[data-mood=vivid] .seg,body[data-mood=vivid] .sel,body[data-mood=vivid] .inp{border-radius:calc(var(--rad) - 8px)}
+body[data-mood=vivid] .q.on{background:linear-gradient(110deg,color-mix(in srgb,var(--ac) 30%,#000),color-mix(in srgb,var(--ac2) 22%,#000))}
+body[data-mood=vivid] .card h3:before{background:var(--ac2);box-shadow:0 0 10px var(--ac2)}
+body[data-mood=vivid] .switch input:checked+i{background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 40%,#000),color-mix(in srgb,var(--ac2) 40%,#000))}
+body[data-mood=vivid] .switch input:checked+i:after{background:#fff}
+body[data-mood=vivid] .eqwrap{border-radius:var(--rad);border-color:color-mix(in srgb,var(--ac) 30%,transparent)}
+
+/* ===== tema "tactical" (Valorant, CS2, Apex, R6): angular, frio, linhas finas ===== */
+body[data-mood=tactical] #gameBg:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,color-mix(in srgb,var(--gtint) 50%,transparent),transparent 50%),repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 4px)}
+body[data-mood=tactical] #gameBg:after{background:radial-gradient(130% 100% at 55% 20%,transparent 30%,#000 90%)}
+body[data-mood=tactical] .card,body[data-mood=tactical] .mrow,body[data-mood=tactical] .svc,body[data-mood=tactical] .cmc,body[data-mood=tactical] .stt,body[data-mood=tactical] .ach,body[data-mood=tactical] .now,body[data-mood=tactical] .eqwrap{border-radius:var(--rad);
+  background:linear-gradient(165deg,rgba(11,13,18,.94),rgba(6,8,11,.95));border:1px solid rgba(255,255,255,.07);border-left:2px solid var(--ac);border-top-color:color-mix(in srgb,var(--ac2) 45%,transparent)}
+body[data-mood=tactical] .card:hover{box-shadow:0 10px 34px -16px var(--ac)}
+body[data-mood=tactical] .ph h1{text-transform:uppercase;letter-spacing:.14em;font-weight:600}
+body[data-mood=tactical] .ph h1:after{width:54px;height:3px;border-radius:0;background:linear-gradient(90deg,var(--ac),var(--ac2))}
+body[data-mood=tactical] .card h3{color:var(--ac2);letter-spacing:.2em}body[data-mood=tactical] .card h3:before{border-radius:0;background:var(--ac);box-shadow:0 0 8px var(--ac)}
+body[data-mood=tactical] .solid{background:var(--ac);border-color:var(--ac);color:#0a0a0c;border-radius:calc(var(--rad) + 2px);text-transform:uppercase;letter-spacing:.08em;font-size:12px}
+body[data-mood=tactical] .q,body[data-mood=tactical] .ghost,body[data-mood=tactical] .seg,body[data-mood=tactical] .sel,body[data-mood=tactical] .inp,body[data-mood=tactical] .nav.on{border-radius:calc(var(--rad) + 2px)}
+body[data-mood=tactical] .q.on{background:color-mix(in srgb,var(--ac) 22%,#000);border-color:var(--ac)}
+body[data-mood=tactical] .rind{background:var(--ac);box-shadow:0 0 16px var(--ac)}
+body[data-mood=tactical] .switch input:checked+i{background:color-mix(in srgb,var(--ac) 35%,#000)}
+
+/* ===== tema "dark" (PUBG, God of War, Warzone, LoL): sombrio, bordas finas, brilho discreto ===== */
+body[data-mood=dark] #gameBg:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,color-mix(in srgb,var(--gtint) 60%,transparent),transparent 60%)}
+body[data-mood=dark] #gameBg:after{background:radial-gradient(120% 95% at 55% 25%,transparent 22%,#000 88%)}
+body[data-mood=dark] .card,body[data-mood=dark] .mrow,body[data-mood=dark] .svc,body[data-mood=dark] .cmc,body[data-mood=dark] .stt,body[data-mood=dark] .ach,body[data-mood=dark] .now,body[data-mood=dark] .eqwrap{border-radius:var(--rad);
+  background:linear-gradient(170deg,rgba(9,10,12,.93),rgba(4,5,6,.95));border:1px solid color-mix(in srgb,var(--ac) 24%,rgba(255,255,255,.04));box-shadow:inset 0 1px 0 color-mix(in srgb,var(--ac) 18%,transparent)}
+body[data-mood=dark] .card:hover{border-color:color-mix(in srgb,var(--ac) 50%,transparent);box-shadow:0 12px 36px -18px var(--ac),inset 0 1px 0 color-mix(in srgb,var(--ac) 25%,transparent)}
+body[data-mood=dark] .ph h1{letter-spacing:.1em;text-shadow:0 0 24px color-mix(in srgb,var(--ac) 40%,transparent)}
+body[data-mood=dark] .ph h1:after{background:linear-gradient(90deg,var(--ac),transparent);width:70px}
+body[data-mood=dark] .card h3{color:var(--ac)}body[data-mood=dark] .card h3:before{background:var(--ac2);box-shadow:0 0 8px var(--ac2)}
+body[data-mood=dark] .solid{background:linear-gradient(120deg,var(--ac),color-mix(in srgb,var(--ac) 55%,#000));border-color:transparent;color:#0a0a0a;border-radius:calc(var(--rad) - 2px)}
+body[data-mood=dark] .q.on{background:color-mix(in srgb,var(--ac) 18%,#000);border-color:color-mix(in srgb,var(--ac) 60%,transparent)}
+body[data-mood=dark] .rind{background:linear-gradient(180deg,var(--ac),var(--ac2))}
+body[data-mood=dark] .switch input:checked+i{background:color-mix(in srgb,var(--ac) 30%,#000)}
+
+/* extensão do navegador: card enxuto (texto curto, passos escondidos) */
+.extc{padding:14px 20px}.extrow{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.extst b{display:flex;align-items:center;font-size:13.5px;font-weight:600}.extst small{display:block;margin-top:2px;font-size:11.5px;color:var(--mut)}
+.extrow .btns .ghost{padding:6px 14px;font-size:12px}
+.extc.ok .extrow .btns{display:none}
+.extdt{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}.extdt summary{cursor:pointer;font-size:12px;color:var(--mut);list-style:none;padding:4px 0}.extdt summary:hover{color:#fff}
+.extdt summary:before{content:"▸ ";color:var(--ac)}.extdt[open] summary:before{content:"▾ "}
+.extdt .exsteps{margin:6px 0;font-size:12px;line-height:1.6}.extdt .srow{padding:8px 0}.extdt .srow .lb b{font-size:12.5px}
+
+/* ===== modo jogo (aplicativo em tela cheia): estética parada, só o essencial ===== */
+body.perf *,body.perf *:before,body.perf *:after{animation:none!important;transition-duration:.01ms!important;transition-delay:0s!important}
+body.perf .amb,body.perf #h3d,body.perf #spHome,body.perf .hwave,body.perf .hmic,body.perf .gbg{display:none!important}
+body.perf *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.perf .hp img{filter:none!important}
+
+/* jogos instalados encontrados (Steam, Epic, Riot) */
+#libBox{margin:0 0 14px}#libBox[hidden]{display:none}
+.libc{border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(255,255,255,.025);padding:0}
+.libc summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:8px;padding:12px 16px;font-size:13.5px}.libc summary::-webkit-details-marker{display:none}
+.libc summary b{font-size:18px;color:var(--ac,#2ef2ff)}.libc summary em{margin-left:auto;font-style:normal;font-size:11px;color:#7d7d89;letter-spacing:.08em}
+.libl{padding:0 10px 4px}.libr{display:flex;align-items:center;gap:12px;padding:9px 8px;border-top:1px solid rgba(255,255,255,.06)}
+.libr>i{width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c);flex:none}
+.libr>div{flex:1;min-width:0}.libr b{display:block;font-size:13.5px;font-weight:600}.libr small{color:#8b8b97;font-size:11.5px}
+.libr button{padding:5px 12px;font-size:12px}.libc .hint{margin:6px 16px 12px}
+/* exceções do Modo jogo */
+.gmx{margin:6px 0 2px}.gmx summary{cursor:pointer;font-size:12.5px;color:#9a9aa6;padding:8px 0}.gmx summary:hover{color:#fff}
+.gmbox{padding:4px 0 8px}.gmh{margin:10px 0 6px}.gmh b{display:block;font-size:13px}.gmh small{color:#8b8b97;font-size:11.5px;line-height:1.4;display:block}
+.gmch{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.gmch em{color:#6c6c78;font-size:12px;font-style:normal}
+.gmc{display:inline-flex;align-items:center;gap:4px;padding:3px 4px 3px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);font-size:12px}
+.gmc button{border:0;background:none;color:#9a9aa6;cursor:pointer;font-size:15px;line-height:1;padding:0 6px;border-radius:50%}.gmc button:hover{color:#ff6b78}
+.gmadd{display:flex;gap:8px}.gmadd input{flex:1;min-width:0;background:#0b0c0f;border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;padding:7px 10px;font-size:12.5px}
+.gmadd button{padding:6px 14px;font-size:12px}
+.gmlast{margin-top:12px;font-size:12px;color:#9a9aa6;display:flex;flex-wrap:wrap;gap:8px;align-items:center}.gmlast:empty{display:none}.gmlast button{padding:4px 11px;font-size:11.5px}
+.batv{font-weight:600}.batv.low{color:#ffb02e}.batv.crit{color:#ff4655}

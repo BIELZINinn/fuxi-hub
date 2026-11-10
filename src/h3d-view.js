@@ -12,7 +12,7 @@ function ensure() {
 function loop(now) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  const on = typeof S !== 'undefined' && S && S.ui && S.ui.view3d === true && !failed;
+  const on = typeof S !== 'undefined' && S && S.ui && S.ui.view3d === true && !failed && !S.perf;
   document.body.classList.toggle('h3d', !!on);
   if (!on) { if (cv) cv.style.opacity = 0; return; }
   const root = document.querySelector('#viewer'); if (!root || !root.offsetParent || document.hidden) return;

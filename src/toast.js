@@ -36,8 +36,9 @@ function getBus() {
     const dl = actx.createDelay(1); dl.delayTime.value = .19;
     const fb = actx.createGain(); fb.gain.value = .26;
     const df = actx.createBiquadFilter(); df.type = 'lowpass'; df.frequency.value = 2600;
-    bus.connect(lp); lp.connect(actx.destination);
-    bus.connect(dl); dl.connect(df); df.connect(fb); fb.connect(dl); df.connect(actx.destination);
+    const lim = actx.createDynamicsCompressor(); lim.threshold.value = -5; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .12; lim.connect(actx.destination);
+    bus.connect(lp); lp.connect(lim);
+    bus.connect(dl); dl.connect(df); df.connect(fb); fb.connect(dl); df.connect(lim);
   }
   return bus;
 }
@@ -110,12 +111,12 @@ function cloudShimmer(volume) {
   noise(b, .5, .9, .018, 'bandpass', 5200, 2600, .15);
 }
 // nivelação: as assinaturas foram medidas e ajustadas para todas soarem no mesmo volume
-const GAME_GAIN = { gow: .62, fortnite: 1.45, valorant: 1.3, cs2: 1.2, pubg: 1.1, apex: .93, warzone: 1.04, overwatch: 1.04, r6: 1.04, lol: 1.09, gta5: 2.1, rocketleague: 1.5, cyberpunk: 2.1, eldenring: 1.14, rdr2: .9, dota2: .83, bf2042: .86, tarkov: 4, witcher3: .83 };
+const GAME_GAIN = { apex: 2.257, bf2042: 3.463, cs2: 2.394, cyberpunk: 4.288, dota2: 2.655, eldenring: 2.147, fortnite: 2.379, gow: 1.65, gta5: 5.461, lol: 1.788, overwatch: 1.807, pubg: 2.763, r6: 3, rdr2: 2.235, rocketleague: 2.73, tarkov: 20.515, valorant: 2.311, warzone: 2.553, witcher3: 1.923 };
 function runGame(id, bus0) { const g = actx.createGain(); g.gain.value = GAME_GAIN[id] || 1; g.connect(bus0); GAME_SND[id](g); }
 function playFile(url, volume) { try { const a = new Audio(url); a.volume = Math.max(0, Math.min(1, volume)); a.play().catch(() => {}); } catch {} }
 function playSound(key, volume, file) {
   if (file) return playFile(file, volume);                                  // arquivo de som que você colocou na pasta de sons
-  const gid = /^game:(.+)$/.exec(key || ''); if (gid && GAME_SND[gid[1]]) { try { runGame(gid[1], getBus(volume)); } catch {} return; }
+  const gid = /^game:(.+)$/.exec(key || ''); if (gid && GAME_SND[gid[1]]) { try { const b = getBus(); b.gain.value = Math.max(0, Math.min(1, volume)); runGame(gid[1], b); } catch {} return; }     // mesmo volume dos arquivos: o ganho do barramento é o volume escolhido
   if (gid) key = 'game';
   const seq = SOUNDS[key]; if (!seq) return;
   try {
@@ -160,6 +161,13 @@ function show(p) {
   if (an !== 'slide') { wrap.style.setProperty('--dx', '0px'); wrap.style.setProperty('--dxo', '0px'); }
   const icon = p.art ? `<img src="${esc(p.art)}" alt="">` : (p.icon && ICONS[p.icon]) ? ICONS[p.icon] : `<span class="ini">${esc(p.initials || '')}</span>`;
   const compact = p.style === 'compact';
+  if (p.kind === 'summary') { wrap.classList.add('smw'); wrap.style.setProperty('--dx', '0px'); }
+  if (p.kind === 'summary' && p.summary) {
+    const fmt = ms => { const m = Math.round(ms / 60000), h = Math.floor(m / 60); return h ? h + ' h ' + (m % 60 ? (m % 60) + ' min' : '') : Math.max(1, m) + ' min'; }, s = p.summary, bn = p.banner || p.art;
+    wrap.innerHTML = `<div class="clip"><div class="card smc" style="--cr:${esc(p.rgb)};--dur:${p.duration}ms">${bn ? `<div class="sm-art" style="background-image:url('${esc(bn)}')"></div>` : `<div class="sm-art ph"><span>${esc(p.initials || '')}</span></div>`}<div class="sm-shade"></div>
+      <div class="sm-body"><div class="gm-kick"><i></i>Resumo da sessão</div><b class="sm-title">${esc(p.title)}</b><div class="sm-big">${fmt(s.ms)}<small>jogados agora</small></div>
+      <div class="sm-row"><div><small>Preset</small><b>${esc(s.preset || '-')}</b></div><div><small>Partidas</small><b>${s.count}</b></div><div><small>Total</small><b>${fmt(s.total)}</b></div></div></div><i class="bar"></i></div></div>`;
+  } else
   if ((p.kind === 'game' || p.kind === 'gameEnd') && !compact) {
     wrap.classList.add('gmw');
     const end = p.kind === 'gameEnd';
@@ -186,7 +194,7 @@ function show(p) {
 function hide(w, quick) {
   if (!w || w.classList.contains('out')) return;
   clearTimeout(w._t); w.classList.remove('in'); w.classList.add('out');
-  setTimeout(() => { w.remove(); if (!stack.children.length) window.toast.empty(); }, quick ? 350 : (w.classList.contains('anim-none') ? 60 : w.classList.contains('gmw') ? 1050 : 520));
+  setTimeout(() => { w.remove(); if (!stack.children.length) window.toast.empty(); }, quick ? 350 : (w.classList.contains('anim-none') ? 60 : (w.classList.contains('gmw') || w.classList.contains('smw')) ? 1050 : 520));
 }
 window.toast.onShow(p => { if (window.I18N && p.lang) I18N.setLang(p.lang); show(p); });
 window.toast.onClear(() => [...stack.children].forEach(w => hide(w, true)));

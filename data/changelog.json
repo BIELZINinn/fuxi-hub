@@ -1,0 +1,154 @@
+{
+  "0.5.2": {
+    "pt": [
+      [
+        "Temas de 19 jogos",
+        "Cada jogo tem cores, arte em 4K e um estilo próprio (tático, sombrio ou colorido). O app se transforma quando o jogo abre."
+      ],
+      [
+        "Resumo da sessão",
+        "Ao fechar um jogo, um cartão com a arte dele mostra quanto tempo você jogou, o preset usado, as partidas e o total."
+      ],
+      [
+        "Mini player do Spotify",
+        "O disco agora tem anterior, pausar e próxima ao passar o mouse, e lê a música mesmo com o Spotify na bandeja."
+      ],
+      [
+        "QR code na tela inicial",
+        "O botão Celular, no canto superior esquerdo, abre o QR para controlar o hub pelo celular."
+      ],
+      [
+        "Mais presets",
+        "Bass Boost (do FxSound), Clareza, Agudos, Loudness e Noturno, todos na tela inicial."
+      ],
+      [
+        "Correção das cores do fone",
+        "As bolinhas de cor do fone voltaram a responder ao clique."
+      ],
+      [
+        "Aba Cloud mais limpa",
+        "O bloco da extensão do navegador ficou pequeno, com os passos escondidos, e os textos longos foram encurtados."
+      ],
+      [
+        "Sons de entrada",
+        "Fortnite, Valorant, CS2, PUBG, Apex e Rocket League ganharam sons próprios, todos no mesmo volume e com fade in suave."
+      ],
+      [
+        "Modo jogo",
+        "Com um aplicativo em tela cheia, o hub fica só com o essencial e deixa a parte visual parada para poupar o PC. Ao sair da tela cheia, volta ao normal."
+      ],
+      [
+        "Modo jogo com exceções",
+        "Vídeos e navegador em tela cheia não ligam mais o Modo jogo, e você escolhe programas que sempre ligam. Em Configurações → Desempenho."
+      ],
+      [
+        "Bateria do fone",
+        "O nível aparece na tela inicial e no selo do jogo, com aviso aos 20% e aos 10%. Depende de o Windows informar a bateria do fone."
+      ],
+      [
+        "Jogos instalados",
+        "O hub procura jogos da Steam, Epic e Riot que ainda não têm preset e deixa você adicionar com um clique, na aba Jogos."
+      ]
+    ],
+    "en": [
+      [
+        "Themes for 19 games",
+        "Each game has its own colors, 4K art and style (tactical, dark or colorful). The app transforms when the game opens."
+      ],
+      [
+        "Session summary",
+        "When you close a game, a card with its art shows how long you played, the preset used, matches and total time."
+      ],
+      [
+        "Spotify mini player",
+        "The disc now has previous, pause and next on hover, and reads the song even with Spotify in the tray."
+      ],
+      [
+        "QR code on Home",
+        "The Phone button, top left, opens the QR code to control the hub from your phone."
+      ],
+      [
+        "More presets",
+        "Bass Boost (from FxSound), Clarity, Treble, Loudness and Night, all on the Home screen."
+      ],
+      [
+        "Headset color fix",
+        "The headset color dots respond to clicks again."
+      ],
+      [
+        "Cleaner Cloud tab",
+        "The browser extension block is now small, with the steps hidden, and long texts were shortened."
+      ],
+      [
+        "Entry sounds",
+        "Fortnite, Valorant, CS2, PUBG, Apex and Rocket League now have their own sounds, all at the same volume with a smooth fade in."
+      ],
+      [
+        "Game mode",
+        "With an app in fullscreen, the hub keeps only the essentials and freezes the visuals to spare the PC. When you leave fullscreen, it goes back to normal."
+      ],
+      [
+        "Game mode exceptions",
+        "Videos and browsers in fullscreen no longer turn on Game mode, and you choose programs that always turn it on. In Settings → Performance."
+      ],
+      [
+        "Headset battery",
+        "The level shows on the home screen and on the game badge, with warnings at 20% and 10%. It depends on Windows reporting the headset battery."
+      ],
+      [
+        "Installed games",
+        "The hub looks for Steam, Epic and Riot games that have no preset yet and lets you add them in one click, on the Games tab."
+      ]
+    ],
+    "es": [
+      [
+        "Temas de 19 juegos",
+        "Cada juego tiene sus colores, arte en 4K y estilo propio (táctico, oscuro o colorido). La app se transforma cuando se abre el juego."
+      ],
+      [
+        "Resumen de la sesión",
+        "Al cerrar un juego, una tarjeta con su arte muestra cuánto jugaste, el preset usado, las partidas y el total."
+      ],
+      [
+        "Mini reproductor de Spotify",
+        "El disco ahora tiene anterior, pausa y siguiente al pasar el ratón, y lee la canción aunque Spotify esté en la bandeja."
+      ],
+      [
+        "Código QR en Inicio",
+        "El botón Móvil, arriba a la izquierda, abre el QR para controlar el hub desde el móvil."
+      ],
+      [
+        "Más presets",
+        "Bass Boost (de FxSound), Claridad, Agudos, Loudness y Nocturno, todos en la pantalla de inicio."
+      ],
+      [
+        "Corrección de colores del auricular",
+        "Los puntos de color del auricular vuelven a responder al clic."
+      ],
+      [
+        "Pestaña Cloud más limpia",
+        "El bloque de la extensión del navegador es pequeño, con los pasos ocultos, y se acortaron los textos largos."
+      ],
+      [
+        "Sonidos de entrada",
+        "Fortnite, Valorant, CS2, PUBG, Apex y Rocket League tienen sonidos propios, todos al mismo volumen y con fade in suave."
+      ],
+      [
+        "Modo juego",
+        "Con una aplicación a pantalla completa, el hub deja solo lo esencial y detiene lo visual para cuidar el PC. Al salir de pantalla completa, vuelve a la normalidad."
+      ],
+      [
+        "Excepciones del Modo juego",
+        "Los vídeos y el navegador a pantalla completa ya no activan el Modo juego, y eliges programas que siempre lo activan. En Ajustes → Rendimiento."
+      ],
+      [
+        "Batería de los auriculares",
+        "El nivel aparece en la pantalla de inicio y en la insignia del juego, con aviso al 20% y al 10%. Depende de que Windows informe la batería."
+      ],
+      [
+        "Juegos instalados",
+        "El hub busca juegos de Steam, Epic y Riot que aún no tienen preset y te deja añadirlos con un clic, en la pestaña Juegos."
+      ]
+    ]
+  }
+}

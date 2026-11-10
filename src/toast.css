@@ -100,3 +100,16 @@ html,body{background:transparent;overflow:hidden;font-family:"Segoe UI Variable"
 .card.compact .ic{width:38px;height:38px;border-radius:11px}.card.compact .ic svg{width:19px;height:19px}.card.compact .ic .ini{font-size:14px}
 .card.compact .kick,.card.compact .spark{display:none}
 .card.compact .tx b{font-size:13.5px}.card.compact .tx span{font-size:11.5px}
+
+/* resumo da sessão: cartão alto com a arte do jogo */
+.smc{position:relative;width:392px;height:236px;border-radius:24px;overflow:hidden;background:#050507;border:1px solid rgba(var(--cr),.45);box-shadow:0 24px 60px -18px #000,0 0 44px -14px rgb(var(--cr))}
+.sm-art{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.12);animation:kb 9s ease-out forwards}
+.sm-art.ph{background:radial-gradient(circle at 75% 30%,rgba(var(--cr),.5),#050507 65%);display:grid;place-items:center}.sm-art.ph span{font-weight:900;font-size:90px;color:rgba(var(--cr),.25)}
+.sm-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,4,6,.22) 0%,rgba(4,4,6,.62) 48%,rgba(4,4,6,.95) 100%)}
+.sm-body{position:absolute;inset:0;padding:20px 24px;display:flex;flex-direction:column}
+.sm-title{font-size:22px;font-weight:700;margin-top:6px;opacity:0;animation:rv .6s .3s cubic-bezier(.2,.9,.2,1) forwards;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sm-big{margin-top:auto;font-size:42px;font-weight:300;letter-spacing:.01em;line-height:1;text-shadow:0 0 26px rgba(var(--cr),.7);opacity:0;animation:up .6s .55s ease forwards}
+.sm-big small{display:block;margin-top:6px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgb(var(--cr));text-shadow:none}
+.sm-row{display:flex;gap:10px;margin-top:14px;opacity:0;animation:up .6s .8s ease forwards}
+.sm-row div{flex:1;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+.sm-row small{display:block;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#a8a8b4}.sm-row b{display:block;margin-top:2px;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
