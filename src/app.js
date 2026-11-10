@@ -932,6 +932,11 @@ function renderConfig() {
     let tSt = null;
     stDelEl = slider(0, v => { const s = Math.round(v / 100 * 30); $('#stDelV').textContent = s === 0 ? 'na hora' : s + ' s'; clearTimeout(tSt); tSt = setTimeout(() => hub.setStartup({ delay: s }), 180); });
     $('#stDelSl').replaceWith(stDelEl);
+    $('#sgBox').insertAdjacentHTML('beforeend', `<div class="card"><h3>Desempenho</h3>
+      <div class="srow" style="border-top:0"><div class="lb"><b>Aceleração por GPU</b><small>Desligada: o app usa bem menos memória (cerca de 500 MB a menos) e fica leve na bandeja, com animações um pouco menos fluidas. Ligada: animações no máximo e o modelo 3D mais suave, com mais memória. Reinicia o app ao mudar.</small></div>
+        <label class="switch"><span>GPU</span><input type="checkbox" id="gpuOn"><i></i></label></div>
+      <div class="mcnote">Economia de memória: ao fechar a janela (X), o app vai para a bandeja e libera a interface. Os avisos, o selo e o disco também só existem enquanto aparecem.</div></div>`);
+    $('#gpuOn').onchange = e => { if (confirm(e.target.checked ? 'Ligar a aceleração por GPU? O app vai reiniciar e passar a usar mais memória.' : 'Desligar a aceleração por GPU? O app vai reiniciar.')) hub.setGpu(e.target.checked); else e.target.checked = !e.target.checked; };
     $('#sgBox').insertAdjacentHTML('afterbegin', `<div class="card"><h3>Idioma</h3>
       <div class="srow" style="border-top:0"><div class="lb"><b>Idioma do app</b><small>Português, inglês ou espanhol. A troca vale na hora para todas as telas e avisos.</small></div>
         <div class="seg" id="lgSw"><button data-l="pt">Português</button><button data-l="en">English</button><button data-l="es">Español</button></div></div></div>`);
@@ -997,6 +1002,7 @@ function renderConfig() {
     $('#sbTour').onclick = () => { go('home'); setTimeout(() => Tour.replay(), 300); };
     cfgUi = true;
   }
+  if ($('#gpuOn')) $('#gpuOn').checked = !!S.gpu;
   $('#uiRm').checked = !!S.ui.reduceMotion; $('#uiFx').checked = S.ui.cardFx !== false;
   $('#uiSp').checked = S.ui.spectrum !== false; $('#uiWs').checked = S.ui.presetWash !== false; $('#uiSn').checked = S.ui.uiSounds !== false;
   document.querySelectorAll('#thSw button').forEach(b => b.classList.toggle('on', b.dataset.t === (S.ui.theme || 'auto')));

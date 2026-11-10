@@ -1,13 +1,13 @@
 // Espectro do áudio que está tocando no PC (captura "loopback" do Windows, sem microfone). Uma captura só, compartilhada.
 (function (root) {
-  let ctx = null, an = null, data = null, starting = null, ok = null;
+  let ctx = null, an = null, data = null, starting = null, ok = null, stream = null;
   function start() {
     if (starting) return starting;
     starting = (async () => {
       try {
         const st = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
         st.getVideoTracks().forEach(t => t.stop());                                  // só o áudio interessa
-        const at = st.getAudioTracks(); if (!at.length) throw new Error('sem áudio');
+        stream = st; const at = st.getAudioTracks(); if (!at.length) throw new Error('sem áudio');
         ctx = new AudioContext(); const src = ctx.createMediaStreamSource(new MediaStream(at));
         an = ctx.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = .8; src.connect(an);
         data = new Uint8Array(an.frequencyBinCount); ok = true;
@@ -28,5 +28,9 @@
     }
     return out;
   }
-  root.Spectrum = { start, bins, get ok() { return ok; } };
+  function stop() {                                          // libera a captura e o contexto de áudio quando ninguém está usando
+    try { if (stream) stream.getTracks().forEach(t => t.stop()); if (ctx) ctx.close(); } catch {}
+    stream = null; ctx = null; an = null; data = null; starting = null; ok = null;
+  }
+  root.Spectrum = { start, stop, bins, get ok() { return ok; } };
 })(window);

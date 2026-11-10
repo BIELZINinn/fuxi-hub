@@ -115,7 +115,7 @@ function loadSettings() {
   settings.hotkeys = mergeHotkeys(settings.hotkeys);
   settings.closeToTray = settings.closeToTray !== false;
   if (!settings.exes || typeof settings.exes !== 'object') settings.exes = {};
-  settings.ui = mergeUi(settings.ui); settings.media = mergeMedia(settings.media); settings.badge = mergeBadge(settings.badge); settings.nowplaying = mergeNp(settings.nowplaying); settings.micfx = mergeMic(settings.micfx); settings.update = mergeUpdate(settings.update); settings.remote = mergeRemote(settings.remote);
+  settings.ui = mergeUi(settings.ui); settings.media = mergeMedia(settings.media); settings.badge = mergeBadge(settings.badge); settings.nowplaying = mergeNp(settings.nowplaying); settings.micfx = mergeMic(settings.micfx); settings.update = mergeUpdate(settings.update); settings.remote = mergeRemote(settings.remote); settings.gpu = settings.gpu === true;
   settings.detectGeneric = settings.detectGeneric !== false;
   settings.audioSwitch = settings.audioSwitch !== false;
   if (!Array.isArray(settings.favorites)) settings.favorites = [];
@@ -672,6 +672,7 @@ function startRemote() {
   tryPort(0);
 }
 function stopRemote() { if (remoteSrv) { try { remoteSrv.close(); remoteSrv.closeAllConnections && remoteSrv.closeAllConnections(); } catch {} remoteSrv = null; remotePort = 0; remoteSeen.clear(); push(); } }
+ipcMain.handle('set-gpu', (_, v) => { settings.gpu = !!v; saveSettings(); quitting = true; app.relaunch(); app.exit(0); return true; });
 ipcMain.handle('remote-set', (_, p) => { settings.remote = mergeRemote({ ...settings.remote, ...(p || {}) }); saveSettings(); if (settings.remote.enabled) { if (!remoteSrv) startRemote(); } else stopRemote(); setTimeout(push, 400); return settings.remote.enabled; });
 ipcMain.handle('remote-newtoken', () => { settings.remote.token = require('crypto').randomBytes(16).toString('hex'); remoteSeen.clear(); saveSettings(); push(); return true; });
 ipcMain.handle('remote-info', () => {
@@ -830,8 +831,8 @@ async function pollGames() {
   }
 }
 
-function snapshot() { return { ...state, auto: settings.auto, notify: settings.notify, hotkeys: settings.hotkeys, hotkeyErrors, closeToTray: settings.closeToTray, autostart, intro: settings.intro, startup: settings.startup, favorites: settings.favorites, stats: settings.stats, ui: settings.ui, detectGeneric: settings.detectGeneric, audioSwitch: settings.audioSwitch, lastBackup, surroundCfg: settings.surround, hesuvi: hesuviInfo(), cloudCfg: settings.cloud, mediaCfg: settings.media, badgeCfg: settings.badge, npCfg: settings.nowplaying, packaged: app.isPackaged, remoteCfg: { enabled: settings.remote.enabled, on: !!remoteSrv }, micFx: settings.micfx, updateCfg: settings.update, update: state.update || { status: 'idle' }, micApo: state.micApo || null, tutorial: settings.tutorial, ach: settings.ach, achSeeded: settings.achSeeded, usageDays: settings.usage.days, rules: settings.rules, rulesEnabled: settings.rulesEnabled, version: app.getVersion(), dataDir: app.getPath('userData'),
-  skipIntro: process.argv.includes('--hidden') || !!process.env.FUXI_SHOTS, noSound: !!process.env.FUXI_NO_SOUND,   /* início escondido (Windows) e testes não tocam a abertura */ profiles: allProfiles(), bands: BANDS, engine: { ...(state.engine || engineStatus()), registered: !!(state.apo && state.apo.fuxi), apoDevices: state.apo ? state.apo.count : 0 } }; }
+function snapshot() { return { ...state, auto: settings.auto, notify: settings.notify, hotkeys: settings.hotkeys, hotkeyErrors, closeToTray: settings.closeToTray, autostart, intro: settings.intro, startup: settings.startup, favorites: settings.favorites, stats: settings.stats, ui: settings.ui, detectGeneric: settings.detectGeneric, audioSwitch: settings.audioSwitch, lastBackup, surroundCfg: settings.surround, hesuvi: hesuviInfo(), cloudCfg: settings.cloud, mediaCfg: settings.media, badgeCfg: settings.badge, npCfg: settings.nowplaying, packaged: app.isPackaged, gpu: GPU_ON, gpuSaved: settings.gpu === true, remoteCfg: { enabled: settings.remote.enabled, on: !!remoteSrv }, micFx: settings.micfx, updateCfg: settings.update, update: state.update || { status: 'idle' }, micApo: state.micApo || null, tutorial: settings.tutorial, ach: settings.ach, achSeeded: settings.achSeeded, usageDays: settings.usage.days, rules: settings.rules, rulesEnabled: settings.rulesEnabled, version: app.getVersion(), dataDir: app.getPath('userData'),
+  skipIntro: process.argv.includes('--hidden') || !!process.env.FUXI_SHOTS || winCreated > 1, noSound: !!process.env.FUXI_NO_SOUND,   /* início escondido (Windows) e testes não tocam a abertura */ profiles: allProfiles(), bands: BANDS, engine: { ...(state.engine || engineStatus()), registered: !!(state.apo && state.apo.fuxi), apoDevices: state.apo ? state.apo.count : 0 } }; }
 function push() { try { updateBadge(); } catch {} if (win && !win.isDestroyed()) win.webContents.send('state', snapshot()); if (mini && !mini.isDestroyed() && mini.isVisible()) mini.webContents.send('state', snapshot()); }
 let hotkeyErrors = {};
 
@@ -896,7 +897,7 @@ function updateBadge() {
   if (key === badgeKey) return; badgeKey = key;
   if (!d) {
     badgeLast = { show: false };
-    if (badgeWin && !badgeWin.isDestroyed() && badgeWin.isVisible()) { badgeWin.webContents.send('badge', badgeLast); setTimeout(() => { if (badgeWin && !badgeWin.isDestroyed() && !badgeData()) badgeWin.hide(); }, 900); }
+    if (badgeWin && !badgeWin.isDestroyed() && badgeWin.isVisible()) { badgeWin.webContents.send('badge', badgeLast); setTimeout(() => { if (badgeWin && !badgeWin.isDestroyed() && !badgeData() && !process.env.FUXI_SHOTS) { badgeWin.destroy(); badgeWin = null; badgeReady = false; } else if (badgeWin && !badgeWin.isDestroyed() && !badgeData()) badgeWin.hide(); }, 1200); }
     return;
   }
   ensureBadge(); placeBadge();
@@ -913,7 +914,7 @@ function npData() {
   if (npPreview && Date.now() < npPreview.until) return { site: 'spotify', ...npPreview.track };
   const m = state.media; if (!m) return null;
   const opts = ['spotify', c.youtube ? 'youtube' : null].filter(Boolean).map(s => m[s] && m[s].title ? { site: s, state: m[s].state === 'playing' ? 'playing' : 'paused', title: m[s].title, artist: m[s].artist || '', art: m[s].art || '' } : null).filter(Boolean);
-  return opts.find(o => o.state === 'playing') || opts[0] || null;
+  return opts.find(o => o.state === 'playing') || null;                        // pausado: sem janela (cada janela é um processo)
 }
 function placeNp() {
   if (!npWin || npWin.isDestroyed()) return;
@@ -936,7 +937,7 @@ function updateNowPlaying() {
   if (sig === npSig) return; npSig = sig;
   if (!d) {
     npLast = { show: false };
-    if (npWin && !npWin.isDestroyed() && npWin.isVisible()) { npWin.webContents.send('np', npLast); setTimeout(() => { if (npWin && !npWin.isDestroyed() && !npData()) npWin.hide(); }, 900); }
+    if (npWin && !npWin.isDestroyed() && npWin.isVisible()) { npWin.webContents.send('np', npLast); setTimeout(() => { if (npWin && !npWin.isDestroyed() && !npData() && !process.env.FUXI_SHOTS) { npWin.destroy(); npWin = null; npReady = false; } else if (npWin && !npWin.isDestroyed() && !npData()) npWin.hide(); }, 1200); }
     return;
   }
   ensureNp(); placeNp();
@@ -961,11 +962,15 @@ function notify(kind, o, force) {
     art: o.art || null, banner: o.banner || null, initials: o.initials || '', icon: o.icon || null, eq: o.eq || null,
     duration: n.duration * 1000, position: n.position, style: n.style, anim: n.anim, sound: !!n.sound && !process.env.FUXI_NO_SOUND, volume: n.volume };   // FUXI_NO_SOUND: só para testes
   const w = ensureOverlay(); placeOverlay();
-  clearTimeout(overlayHideTimer);
+  clearTimeout(overlayHideTimer); clearTimeout(overlayIdle);
   if (!w.isVisible()) w.showInactive();
   p.lang = settings.ui.lang; if (overlayReady) w.webContents.send('toast', p); else overlayQueue.push(p);
 }
-ipcMain.on('toast-empty', () => { clearTimeout(overlayHideTimer); overlayHideTimer = setTimeout(() => { if (overlay && !overlay.isDestroyed()) overlay.hide(); }, 300); });
+let overlayIdle = null;
+ipcMain.on('toast-empty', () => {
+  clearTimeout(overlayHideTimer); overlayHideTimer = setTimeout(() => { if (overlay && !overlay.isDestroyed()) overlay.hide(); }, 300);
+  clearTimeout(overlayIdle); overlayIdle = setTimeout(() => { if (overlay && !overlay.isDestroyed() && !overlay.isVisible() && !process.env.FUXI_SHOTS) { overlay.destroy(); overlay = null; overlayReady = false; overlayQueue = []; } }, 20000);     // sem aviso por 20 s: libera a janela (volta sozinha no próximo aviso)
+});
 const eqOf = p => (p ? { f: p.f, g: p.eq, q: p.q, t: p.t } : null);
 
 // som de entrada de cada jogo: se existir um arquivo "<id-do-jogo>.mp3/.wav/.ogg…" na pasta de sons, toca ele; senão, a assinatura sintetizada do jogo
@@ -1110,22 +1115,23 @@ let tray = null, quitting = false;
 const cyclable = () => allProfiles().filter(p => !p.exe);       // presets de uso (Padrão, Música…) + os seus; jogos ficam de fora
 // mini-janela flutuante (atalho): volume, preset, microfone e espectro. Some sozinha ao clicar fora ou depois de alguns segundos parada.
 let mini = null, miniTimer = null;
-function miniKeep() { clearTimeout(miniTimer); if (!process.env.FUXI_SHOTS) miniTimer = setTimeout(() => { if (mini && !mini.isDestroyed()) mini.hide(); }, 9000); }
-function toggleMini() { if (mini && !mini.isDestroyed() && mini.isVisible()) mini.hide(); else showMini(); }
+function closeMini() { clearTimeout(miniTimer); if (mini && !mini.isDestroyed()) { if (process.env.FUXI_SHOTS) mini.hide(); else { mini.destroy(); mini = null; } } }
+function miniKeep() { clearTimeout(miniTimer); if (!process.env.FUXI_SHOTS) miniTimer = setTimeout(closeMini, 9000); }
+function toggleMini() { if (mini && !mini.isDestroyed() && mini.isVisible()) closeMini(); else showMini(); }
 function showMini() {
   const place = () => { const wa = screen.getPrimaryDisplay().workArea; mini.setBounds({ x: Math.round(wa.x + wa.width / 2 - 200), y: Math.round(wa.y + wa.height - 196 - 40), width: 400, height: 196 }); mini.show(); mini.focus(); miniKeep(); };
   if (!mini || mini.isDestroyed()) {
     mini = new BrowserWindow({ width: 400, height: 196, frame: false, transparent: true, alwaysOnTop: true, skipTaskbar: true, resizable: false, show: false, hasShadow: false, webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, autoplayPolicy: 'no-user-gesture-required' } });
     mini.setAlwaysOnTop(true, 'screen-saver'); global.__mini = mini;
-    mini.on('blur', () => { if (!process.env.FUXI_SHOTS && mini && !mini.isDestroyed()) mini.hide(); });
+    mini.on('blur', () => { if (!process.env.FUXI_SHOTS) setTimeout(closeMini, 50); });
     mini.webContents.once('did-finish-load', () => { mini.webContents.send('state', snapshot()); place(); });
     mini.loadFile(path.join(__dirname, 'src', 'mini.html'));
   } else { mini.webContents.send('state', snapshot()); place(); }
 }
 ipcMain.on('mini-keep', miniKeep);
-ipcMain.on('mini-hide', () => { if (mini && !mini.isDestroyed()) mini.hide(); });
+ipcMain.on('mini-hide', closeMini);
 ipcMain.handle('mini-open', () => { showMini(); });
-function showWin() { if (!win || win.isDestroyed()) return; if (win.isMinimized()) win.restore(); win.show(); win.focus(); }
+function showWin() { if (!win || win.isDestroyed()) { createMainWindow(true); return; } if (win.isMinimized()) win.restore(); win.show(); win.focus(); }
 function setPreset(id) {
   const p = findProfile(id); if (!p) return;
   settings.manual = id; saveSettings(); applyEq(id);
@@ -1219,7 +1225,7 @@ ipcMain.on('startup-intro-done', () => {
   startupTimer = setTimeout(() => {
     startupTimer = null;
     if (startupTouched || !win || win.isDestroyed() || !tray) return;
-    win.hide();
+    if (process.env.FUXI_SHOTS) win.hide(); else win.destroy();
     if (!settings.trayHint) { settings.trayHint = true; saveSettings(); notify('info', { id: 'tray', title: 'Fuxi Hub continua ativo', body: 'Ele fica na bandeja, perto do relógio. Clique no ícone para abrir.', icon: 'info', color: '#2ef2ff' }, true); }
   }, s.delay * 1000);
 });
@@ -1438,38 +1444,62 @@ ipcMain.handle('win', (_, a) => {
 // não consegue iniciar o processo gráfico: a janela fica preta e travada (ou o app fecha). Sem sandbox ele abre
 // normal. É seguro aqui porque o app só carrega arquivos locais próprios (nenhum site) e usa contextIsolation.
 app.commandLine.appendSwitch('no-sandbox');
+// Economia de memória e de processos: GPU dentro do processo principal, áudio e rede sem processo à parte, sem renderizador reserva e sem recursos que o app não usa.
+// Aceleração por GPU: DESLIGADA por padrão. Sem ela o app usa ~500 MB a menos de memória (na bandeja, ~90 MB no total) e tem um processo a menos.
+// Quem quiser as animações no máximo de fluidez liga em Configurações → Geral (reinicia o app). A escolha é lida aqui, antes do app iniciar.
+let GPU_ON = false;
+try { GPU_ON = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'settings.json'), 'utf8')).gpu === true; } catch {}
+if (!GPU_ON) { app.disableHardwareAcceleration(); app.commandLine.appendSwitch('enable-unsafe-swiftshader'); }
+app.commandLine.appendSwitch('in-process-gpu');
+app.commandLine.appendSwitch('disable-features', 'SpareRendererForSitePerProcess,AudioServiceOutOfProcess,NetworkServiceInProcess2,CalculateNativeWinOcclusion,MediaRouter,Translate,OptimizationHints,AutofillServerCommunication,HardwareMediaKeyHandling');
+app.commandLine.appendSwitch('disable-background-networking');
+app.commandLine.appendSwitch('disable-component-update');
+app.commandLine.appendSwitch('disable-default-apps');
+app.commandLine.appendSwitch('no-pings');
 const shots = process.env.FUXI_SHOTS ? require('./tools/shots.js') : null;   // só em testes
 if (shots) shots.early(app);
 const gotLock = shots ? true : app.requestSingleInstanceLock();      // segunda abertura só traz a janela para a frente
 if (!gotLock) app.quit(); else app.on('second-instance', showWin);
+// A janela principal só existe enquanto está na tela: ao ir para a bandeja ela é destruída (libera o renderizador, a maior parte da memória)
+// e criada de novo ao abrir. O hub segue trabalhando no processo principal.
+let winCreated = 0;
+function createMainWindow(forceShow) {
+  const first = winCreated++ === 0;
+  win = new BrowserWindow({
+    width: 1180, height: 760, minWidth: 980, minHeight: 640,
+    frame: false, backgroundColor: '#000000', title: 'Fuxi Hub', icon: BRAND('icon-512.png'), show: forceShow || !process.argv.includes('--hidden'),   // --hidden: início com o Windows, fica só na bandeja
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, autoplayPolicy: 'no-user-gesture-required' }
+  });
+  const w = win;
+  w.setMenuBarVisibility(false);
+  w.loadFile(path.join(__dirname, 'src', 'index.html'));
+  w.webContents.on('did-finish-load', () => { if (first) { pollDevice(); pollGames(); applyEq(settings.manual || 'default'); } else push(); });
+  w.on('close', e => {                                       // o X manda o hub para a bandeja: continua trocando preset por jogo
+    if (quitting || !settings.closeToTray || !tray) return;
+    e.preventDefault();
+    if (!process.env.FUXI_SHOTS) { setTimeout(() => { if (!w.isDestroyed()) w.destroy(); }, 0); } else w.hide();
+    if (!settings.trayHint) {
+      settings.trayHint = true; saveSettings();
+      notify('info', { id: 'tray', title: 'Fuxi Hub continua ativo', body: 'Ele fica na bandeja, perto do relógio. Clique no ícone para abrir.', icon: 'info', color: '#2ef2ff' }, true);
+    }
+  });
+  w.on('closed', () => { if (win === w) win = null; });
+  return w;
+}
 app.whenReady().then(() => {
   session.defaultSession.setDisplayMediaRequestHandler((req, cb) => { desktopCapturer.getSources({ types: ['screen'] }).then(s => cb({ video: s[0], audio: 'loopback' })).catch(() => cb({})); });     // áudio do sistema para o visualizador
   if (!gotLock) return;
   settingsPath = path.join(app.getPath('userData'), 'settings.json');
   loadSettings(); saveSettings(); startExtServer(); if (settings.remote.enabled) setTimeout(startRemote, 1500);
   if (!process.env.FUXI_SHOTS) autoBackup();                                  // testes não mexem na pasta de backups
-  win = new BrowserWindow({
-    width: 1180, height: 760, minWidth: 980, minHeight: 640,
-    frame: false, backgroundColor: '#000000', title: 'Fuxi Hub', icon: BRAND('icon-512.png'), show: !process.argv.includes('--hidden'),   // --hidden: início com o Windows, fica só na bandeja
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, autoplayPolicy: 'no-user-gesture-required' }
-  });
-  win.setMenuBarVisibility(false);
-  win.loadFile(path.join(__dirname, 'src', 'index.html'));
-  win.webContents.on('did-finish-load', () => { pollDevice(); pollGames(); applyEq(settings.manual || 'default'); });
-  win.on('close', e => {                                       // o X só esconde: o hub continua na bandeja trocando preset por jogo
-    if (quitting || !settings.closeToTray || !tray) return;
-    e.preventDefault(); win.hide();
-    if (!settings.trayHint) {
-      settings.trayHint = true; saveSettings();
-      notify('info', { id: 'tray', title: 'Fuxi Hub continua ativo', body: 'Ele fica na bandeja, perto do relógio. Clique no ícone para abrir.', icon: 'info', color: '#2ef2ff' }, true);
-    }
-  });
+  createMainWindow(false);
   try { createTray(); } catch {}
   registerHotkeys();
   refreshAutostart().then(push);
   if (shots) shots.run(win, app, () => overlay);
-  setInterval(pollDevice, 4000);
-  setInterval(pollGames, 3000);
+  const loop = (fn, visMs, hidMs) => { let busy = false; const tick = async () => { if (!busy) { busy = true; try { await fn(); } catch {} busy = false; } setTimeout(tick, win && !win.isDestroyed() && win.isVisible() ? visMs : hidMs); }; setTimeout(tick, visMs); };
+  loop(() => new Promise(r => { pollDevice(); setTimeout(r, 1500); }), 5000, 10000);       // fone: 5 s com a janela aberta, 10 s na bandeja
+  loop(pollGames, 3000, 4000);
 });
 app.on('will-quit', () => globalShortcut.unregisterAll());
 app.on('before-quit', () => { quitting = true; if (previewActive) { try { applyEq(state.active); } catch {} } });   // nunca deixa uma prévia não salva no som

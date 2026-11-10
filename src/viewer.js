@@ -26,7 +26,7 @@
     let drag = 0, dragging = false, lastX = 0;
     let accent = [46, 242, 255], accentTarget = [46, 242, 255];
     const mouse = { x: 0, y: 0 }, tilt = { x: 0, y: 0 };
-    let last = performance.now();
+    let last = performance.now(), lastFilter = '';
 
     // arrastar gira o fone; ao soltar ele volta suavemente
     root.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; root.setPointerCapture(e.pointerId); });
@@ -53,6 +53,9 @@
 
     function frame(now) {
       requestAnimationFrame(frame);
+      if (document.hidden) { last = now; return; }
+      const idleSlow = phase === 'present' || phase === 'none';                     // parado: 30 quadros por segundo bastam (metade do trabalho)
+      if (idleSlow && now - last < (document.body.classList.contains('sw') ? 100 : 30)) return;
       const dt = Math.min(.05, (now - last) / 1000); last = now;
       if (!root.offsetParent) return;                         // aba escondida: não gasta processamento
       time += dt; step(dt);
@@ -88,7 +91,8 @@
       } else { maskBox.style.webkitMaskImage = ''; maskBox.style.maskImage = ''; scan.style.opacity = 0; }
       img.style.opacity = isFuxi ? clamp(p * 5, 0, 1).toFixed(2) : 0;
       const bright = 1 + .5 * (1 - e), sat = .4 + .6 * e, blur = (1 - e) * 3;
-      img.style.filter = `brightness(${bright.toFixed(2)}) saturate(${sat.toFixed(2)})${blur > .1 ? ` blur(${blur.toFixed(1)}px)` : ''} drop-shadow(0 24px 34px rgba(var(--va),.2))`;
+      const fl = `brightness(${bright.toFixed(2)}) saturate(${sat.toFixed(2)})${blur > .1 ? ` blur(${blur.toFixed(1)}px)` : ''} drop-shadow(0 24px 34px rgba(var(--va),.2))`;
+      if (fl !== lastFilter) { lastFilter = fl; img.style.filter = fl; }                    // só mexe no filtro quando ele muda (é o trecho mais caro da pintura)
 
       // brilho que passa sobre o fone (só parado)
       if (phase === 'present' && shineT < 0 && time > nextShine) { shineT = 0; nextShine = time + 7; }

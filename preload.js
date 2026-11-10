@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('hub', {
   setCloud: p => inv('set-cloud', p),
   cloudWindows: () => inv('cloud-windows'),
   cloudTeach: a => inv('cloud-teach', a),
+  setGpu: v => inv('set-gpu', v),
   remoteSet: p => inv('remote-set', p),
   remoteNewToken: () => inv('remote-newtoken'),
   remoteInfo: () => inv('remote-info'),

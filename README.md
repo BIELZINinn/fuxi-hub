@@ -109,6 +109,13 @@ Todos podem ser alterados em Configurações → Atalhos.
 
 A extensão só conversa com o hub neste PC (`127.0.0.1`) e só roda em `xbox.com/play`, `geforcenow.com`, `open.spotify.com` e `youtube.com`.
 
+## Desempenho
+
+O Fuxi Hub foi feito para ficar na bandeja gastando pouco: ao fechar a janela (X), a interface é descartada e o app fica com **2 processos e cerca de 70 MB**, usando menos de 1% de CPU. Com a janela aberta ficam 3 processos e cerca de 200 MB.
+
+- A **aceleração por GPU vem desligada** por padrão (economiza cerca de 500 MB). Quem preferir as animações mais fluidas e o 3D mais suave liga em Configurações → Geral → Desempenho (o app reinicia).
+- Avisos, selo de jogo, disco do Spotify e mini-janela só existem enquanto aparecem.
+
 ## Privacidade
 
 - Nenhum dado seu sai do PC. O app não tem telemetria nem servidores próprios.

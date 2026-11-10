@@ -248,3 +248,17 @@ html[data-style=paper] .card,html[data-style=paper] .mrow,html[data-style=paper]
 body.h3d .hp img,body.h3d .hp .shine,body.h3d .hp .hwave,body.h3d .hp .hmic{visibility:hidden}
 .h3btn{margin-top:10px;padding:4px 14px;border-radius:20px;border:1px solid #26262e;background:#09090c;font-size:11px;letter-spacing:.2em;color:var(--mut);transition:.3s var(--spring)}
 .h3btn:hover{color:#fff;transform:translateY(-2px)}.h3btn.on{border-color:var(--ac);color:var(--ac);box-shadow:0 0 14px -4px var(--ac)}
+
+/* sem aceleração por GPU: tira o que fica animando o tempo todo em camadas grandes */
+body.sw .amb i{animation:none}
+body.sw .nav.on:before,body.sw .nav.on{animation:none}
+body.sw .card h3:before,body.sw .exdot.on,body.sw .pill i{animation:none}
+body.sw .solid:after{animation:none;display:none}
+
+/* sem GPU o desfoque de fundo (backdrop-filter) custa ~130% de um nucleo: troca por fundo mais opaco */
+body.sw *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.sw .rail,body.sw .titlebar{background:rgba(0,0,0,.92)}
+html[data-style=glass] body.sw .card,html[data-style=glass] body.sw .mrow,html[data-style=glass] body.sw .cmc,html[data-style=glass] body.sw .ach,html[data-style=glass] body.sw .stt,html[data-style=glass] body.sw .mdsv,html[data-style=glass] body.sw .svc,html[data-style=glass] body.sw .now{background:rgba(24,26,40,.82)}
+
+/* sem GPU: animacoes viram estado final (como em Reduzir animacoes); transicoes curtas continuam */
+body.sw main *,body.sw main *:before,body.sw main *:after,body.sw .rail *,body.sw .rail *:before,body.sw .rail *:after,body.sw .titlebar *,body.sw .amb *,body.sw #viewer *{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important}

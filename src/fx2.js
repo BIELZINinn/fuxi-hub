@@ -84,12 +84,12 @@
   setInterval(async () => {                                              // luz vermelha no microfone quando está mutado
     if (typeof page === 'undefined' || page !== 'home' || !S || !S.device || !S.device.known || !micDot) return;
     try { const m = await hub.micGet(); micDot.classList.toggle('on', !!(m && m.mute)); } catch {}
-  }, 3500);
+  }, 6000);
 
   // ---------- espectro ao vivo ----------
   function fit(cv, w, h) { const d = devicePixelRatio || 1; if (cv.width !== Math.round(w * d) || cv.height !== Math.round(h * d)) { cv.width = Math.round(w * d); cv.height = Math.round(h * d); } const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, w, h); return c; }
   const accRGB = () => rgb(lastAcc || '#2ef2ff').join(',');
-  let smooth = null;
+  let smooth = null, lastSpUse = 0;
   function drawHome() {
     const cv = Q('#spHome'); if (!cv) return; const w = cv.clientWidth, h = cv.clientHeight; if (!w) return;
     const c = fit(cv, w, h), N = 64, v = Spectrum.bins(N) || new Array(N).fill(0), bw = w / N, a = accRGB();
@@ -110,12 +110,15 @@
     const g = c.createLinearGradient(0, EQ.mt, 0, base); g.addColorStop(0, `rgba(${a},.28)`); g.addColorStop(1, `rgba(${a},.02)`); c.fillStyle = g; c.fill();
     c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]))); c.strokeStyle = `rgba(${a},.5)`; c.lineWidth = 1.2; c.stroke();
   }
-  function loop() {
+  let lastDraw = 0;
+  function loop(now) {
     requestAnimationFrame(loop);
     if (document.hidden || !S || !S.ui || S.ui.spectrum === false || rm()) return;
-    if (page !== 'home' && page !== 'eq') return;
+    if (page !== 'home' && page !== 'eq') { if (Spectrum.ok !== null && performance.now() - lastSpUse > 15000) Spectrum.stop(); return; }
+    lastSpUse = performance.now();
     if (Spectrum.ok === null) Spectrum.start();
     if (!Spectrum.ok) return;
+    if (now - lastDraw < (document.body.classList.contains('sw') ? 66 : 30)) return; lastDraw = now;
     if (page === 'home') drawHome(); else drawEqSp();
   }
   requestAnimationFrame(loop);
@@ -134,6 +137,7 @@
   function onState() {
     if (!S) return;
     if (window.I18N && S.ui) I18N.setLang(S.ui.lang || 'pt');
+    document.body.classList.toggle('sw', !S.gpu);
     applyTheme(); applyStyle();
     const key = S.active + '|' + (S.game || ''), early = performance.now() - t0 < 7000;
     const presetChanged = !firstState && key !== lastKey, gameStarted = !firstState && S.game && S.game !== lastGame;
