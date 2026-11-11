@@ -1561,10 +1561,27 @@ app.commandLine.appendSwitch('no-sandbox');
 // Economia de memória e de processos: GPU dentro do processo principal, áudio e rede sem processo à parte, sem renderizador reserva e sem recursos que o app não usa.
 // Aceleração por GPU: DESLIGADA por padrão. Sem ela o app usa ~500 MB a menos de memória (na bandeja, ~90 MB no total) e tem um processo a menos.
 // Quem quiser as animações no máximo de fluidez liga em Configurações → Geral (reinicia o app). A escolha é lida aqui, antes do app iniciar.
-let GPU_ON = false;
-try { GPU_ON = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'settings.json'), 'utf8')).gpu === true; } catch {}
-if (!GPU_ON) { app.disableHardwareAcceleration(); app.commandLine.appendSwitch('enable-unsafe-swiftshader'); }
-app.commandLine.appendSwitch('in-process-gpu');
+// Proteção: se o app não conseguir abrir com a GPU ligada (tela cinza/preta, processo gráfico caindo), ele desliga a GPU sozinho e volta a abrir.
+//  - "gpu-probe.txt" conta as aberturas com GPU que não chegaram a ficar estáveis; na 3ª, a GPU é desligada antes de iniciar.
+//  - o processo gráfico caindo com a GPU ligada também desliga e reinicia. Dá para forçar com o argumento --no-gpu.
+let GPU_ON = false, GPU_AUTO_OFF = false;
+const USER_DIR = app.getPath('userData'), GPU_SET = path.join(USER_DIR, 'settings.json'), GPU_PROBE = path.join(USER_DIR, 'gpu-probe.txt');
+function gpuTurnOff() { try { const s = JSON.parse(fs.readFileSync(GPU_SET, 'utf8')); s.gpu = false; fs.writeFileSync(GPU_SET, JSON.stringify(s, null, 2)); } catch {} try { fs.unlinkSync(GPU_PROBE); } catch {} }
+try { GPU_ON = JSON.parse(fs.readFileSync(GPU_SET, 'utf8')).gpu === true; } catch {}
+if (process.argv.includes('--no-gpu')) { if (GPU_ON) gpuTurnOff(); GPU_ON = false; }
+if (GPU_ON) {
+  let n = 0; try { n = parseInt(fs.readFileSync(GPU_PROBE, 'utf8'), 10) || 0; } catch {}
+  if (n >= 2) { gpuTurnOff(); GPU_ON = false; GPU_AUTO_OFF = true; } else { try { fs.writeFileSync(GPU_PROBE, String(n + 1)); } catch {} }
+}
+if (!GPU_ON) { app.disableHardwareAcceleration(); app.commandLine.appendSwitch('enable-unsafe-swiftshader'); app.commandLine.appendSwitch('in-process-gpu'); }   // sem GPU: tudo dentro do processo principal (economiza memória). Com GPU: processo gráfico separado, o mais estável
+let gpuFalling = false;
+function gpuFail(why) {                                                    // GPU ligada e quebrou: desliga e reinicia
+  if (!GPU_ON || gpuFalling || process.env.FUXI_SHOTS) return; gpuFalling = true;
+  try { fs.appendFileSync(path.join(USER_DIR, 'gpu-fail.log'), new Date().toISOString() + ' ' + why + '\n'); } catch {}
+  gpuTurnOff(); quitting = true; app.relaunch(); app.exit(0);
+}
+app.on('child-process-gone', (_, d) => { if (d && d.type === 'GPU') gpuFail('gpu process gone: ' + d.reason); });
+app.on('render-process-gone', (_, wc, d) => { if (d && d.reason !== 'clean-exit' && d.reason !== 'killed') gpuFail('renderer gone: ' + d.reason); });
 app.commandLine.appendSwitch('disable-features', 'SpareRendererForSitePerProcess,AudioServiceOutOfProcess,NetworkServiceInProcess2,CalculateNativeWinOcclusion,MediaRouter,Translate,OptimizationHints,AutofillServerCommunication,HardwareMediaKeyHandling');
 app.commandLine.appendSwitch('disable-background-networking');
 app.commandLine.appendSwitch('disable-component-update');
@@ -1588,6 +1605,10 @@ function createMainWindow(forceShow) {
   w.setMenuBarVisibility(false);
   w.loadFile(path.join(__dirname, 'src', 'index.html'));
   w.webContents.on('did-finish-load', () => { if (first) { pollDevice(); pollGames(); applyEq(settings.manual || 'default'); } else push(); });
+  if (GPU_ON) {                                              // abertura com GPU: se a janela fica de pé por alguns segundos, está tudo certo
+    w.webContents.once('did-finish-load', () => setTimeout(() => { if (!w.isDestroyed()) { try { fs.unlinkSync(GPU_PROBE); } catch {} } }, 4000));
+    w.on('unresponsive', () => gpuFail('window unresponsive'));
+  }
   w.on('close', e => {                                       // o X manda o hub para a bandeja: continua trocando preset por jogo
     if (quitting || !settings.closeToTray || !tray) return;
     e.preventDefault();
@@ -1608,6 +1629,7 @@ app.whenReady().then(() => {
   if (!process.env.FUXI_SHOTS) autoBackup();                                  // testes não mexem na pasta de backups
   createMainWindow(false);
   try { createTray(); } catch {}
+  if (GPU_AUTO_OFF) setTimeout(() => notify('info', { id: 'gpu', title: 'Aceleração por GPU desligada', body: 'O app não estava abrindo direito com ela. Você pode tentar ligar de novo em Configurações → Desempenho.', icon: 'info', color: '#ffb02e' }, true), 4000);
   registerHotkeys();
   refreshAutostart().then(push);
   if (shots) shots.run(win, app, () => overlay);

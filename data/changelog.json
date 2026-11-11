@@ -150,5 +150,25 @@
         "El hub busca juegos de Steam, Epic y Riot que aún no tienen preset y te deja añadirlos con un clic, en la pestaña Juegos."
       ]
     ]
+  },
+  "0.5.3": {
+    "pt": [
+      [
+        "Aceleração por GPU mais segura",
+        "Se o app não abrir direito com a GPU ligada, ele desliga a GPU sozinho e volta a abrir. Com a GPU ligada, o processo gráfico agora roda separado, o mais estável."
+      ]
+    ],
+    "en": [
+      [
+        "Safer GPU acceleration",
+        "If the app does not open properly with the GPU on, it turns the GPU off by itself and opens again. With the GPU on, the graphics process now runs separately, the most stable setup."
+      ]
+    ],
+    "es": [
+      [
+        "Aceleración por GPU más segura",
+        "Si la app no abre bien con la GPU activada, la desactiva sola y vuelve a abrir. Con la GPU activada, el proceso gráfico ahora corre por separado, lo más estable."
+      ]
+    ]
   }
 }
