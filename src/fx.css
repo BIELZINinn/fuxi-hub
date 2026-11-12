@@ -382,4 +382,4 @@ body.perf .hp img{filter:none!important}
 .gmadd{display:flex;gap:8px}.gmadd input{flex:1;min-width:0;background:#0b0c0f;border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;padding:7px 10px;font-size:12.5px}
 .gmadd button{padding:6px 14px;font-size:12px}
 .gmlast{margin-top:12px;font-size:12px;color:#9a9aa6;display:flex;flex-wrap:wrap;gap:8px;align-items:center}.gmlast:empty{display:none}.gmlast button{padding:4px 11px;font-size:11.5px}
-.batv{font-weight:600}.batv.low{color:#ffb02e}.batv.crit{color:#ff4655}
+.batv{font-weight:600}.batv.low{color:#ffb02e}.batv.crit{color:#ff4655}.npsl{accent-color:#2ef2ff;width:170px;vertical-align:middle}

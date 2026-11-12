@@ -20,6 +20,9 @@
         <label class="switch"><span>Disco</span><input type="checkbox" id="npOn"><i></i></label></div>
       <div class="srow stk"><div class="lb"><b>Canto da tela</b></div><div class="bgpos" id="npPos">${POS.map(([k, t]) => `<button data-p="${k}" title="${t}"><i></i></button>`).join('')}</div></div>
       <div class="srow"><div class="lb"><b>Tamanho</b></div><div class="seg" id="npSz"><button data-v="small">Pequeno</button><button data-v="normal">Normal</button></div></div>
+      <div class="srow"><div class="lb"><b>Arrastar e redimensionar</b><small>Com o disco na tela, arraste-o com o mouse para qualquer lugar. A roda do mouse sobre ele (ou os botões − e + no cartão) aumenta e diminui. Se você escolher um canto acima, o disco volta ao posicionamento automático.</small><small id="npFree" hidden>Posição livre ativa.</small></div>
+        <div class="btns" style="margin:0"><button class="ghost" id="npPlace">Posicionar agora</button></div></div>
+      <div class="srow"><div class="lb"><b>Ajuste fino do tamanho</b></div><div class="ctl"><input type="range" id="npScale" class="npsl" min="50" max="220" step="5"><span class="vv" id="npScaleV"></span></div></div>
       <div class="srow"><div class="lb"><b>Mostrar o nome da música</b><small>Artista e título aparecem ao lado do disco quando a música muda.</small></div>
         <label class="switch"><span>Nome</span><input type="checkbox" id="npTi"><i></i></label></div>
       <div class="srow"><div class="lb"><b>Também para o YouTube</b><small>Mostra o disco com o vídeo que está tocando (precisa da extensão do navegador).</small></div>
@@ -37,6 +40,8 @@
     document.querySelectorAll('#npPos button').forEach(b => b.onclick = () => hub.setNowPlaying({ pos: b.dataset.p }).then(() => hub.testNp()));
     document.querySelectorAll('#npSz button').forEach(b => b.onclick = () => hub.setNowPlaying({ size: b.dataset.v }).then(() => hub.testNp()));
     Q('#npTest').onclick = () => hub.testNp();
+    Q('#npPlace').onclick = () => hub.testNp(60);                                   // disco de exemplo por 60 s, para arrastar e ajustar o tamanho
+    let tsc = null; Q('#npScale').oninput = e => { const v = +e.target.value; Q('#npScaleV').textContent = v + '%'; clearTimeout(tsc); tsc = setTimeout(() => hub.setNowPlaying({ scale: v / 100 }), 120); };
   }
   function render() {
     if (!S || !S.badgeCfg) return; build(); if (!built) return; const c = S.badgeCfg;
@@ -48,6 +53,8 @@
       Q('#npOn').checked = n.enabled; Q('#npTi').checked = n.showTitle; Q('#npYt').checked = n.youtube;
       document.querySelectorAll('#npPos button').forEach(b => b.classList.toggle('on', b.dataset.p === n.pos));
       document.querySelectorAll('#npSz button').forEach(b => b.classList.toggle('on', b.dataset.v === n.size));
+      const sl = Q('#npScale'); if (document.activeElement !== sl) { sl.value = Math.round((n.scale || 1) * 100); Q('#npScaleV').textContent = sl.value + '%'; }
+      Q('#npFree').hidden = n.x === null || n.x === undefined;
     }
   }
   window.BadgeUi = { render };

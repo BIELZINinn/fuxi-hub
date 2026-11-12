@@ -210,5 +210,49 @@
         "Si tenías la apertura antigua (\"Pulso\"), ahora pasas a la nueva \"Plano\". Si elegiste otra apertura, se mantiene. Puedes cambiarla en Ajustes → Animaciones."
       ]
     ]
+  },
+  "0.5.6": {
+    "pt": [
+      [
+        "THE FINALS",
+        "Novo jogo na lista, com a arte, preset de equalização próprio (passos em destaque e graves das explosões contidos), tema vermelho e som de entrada."
+      ],
+      [
+        "Disco do Spotify arrastável",
+        "Arraste o disco para qualquer lugar da tela e mude o tamanho com a roda do mouse ou pelos botões − e +. A posição e o tamanho ficam guardados."
+      ],
+      [
+        "Disco na frente do jogo",
+        "O disco, o selo e os avisos voltam para a frente quando o jogo abre, para não ficarem escondidos atrás dele (em tela cheia exclusiva o Windows não deixa)."
+      ]
+    ],
+    "en": [
+      [
+        "THE FINALS",
+        "New game on the list, with its art, its own equalizer preset (footsteps up front, explosion bass held back), a red theme and an entry sound."
+      ],
+      [
+        "Draggable Spotify disc",
+        "Drag the disc anywhere on the screen and resize it with the mouse wheel or the − and + buttons. Position and size are remembered."
+      ],
+      [
+        "Disc in front of the game",
+        "The disc, the badge and the notices come back to the front when the game opens, so they are not hidden behind it (Windows does not allow this in exclusive fullscreen)."
+      ]
+    ],
+    "es": [
+      [
+        "THE FINALS",
+        "Nuevo juego en la lista, con su arte, preset de ecualizador propio (pasos en primer plano y graves de las explosiones contenidos), tema rojo y sonido de entrada."
+      ],
+      [
+        "Disco de Spotify arrastrable",
+        "Arrastra el disco a cualquier lugar de la pantalla y cambia su tamaño con la rueda del ratón o los botones − y +. La posición y el tamaño se guardan."
+      ],
+      [
+        "Disco delante del juego",
+        "El disco, la insignia y los avisos vuelven al frente cuando se abre el juego, para no quedar ocultos detrás (en pantalla completa exclusiva Windows no lo permite)."
+      ]
+    ]
   }
 }

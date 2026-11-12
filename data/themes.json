@@ -188,5 +188,14 @@
                    "accent":  "#d9b24a",
                    "radius":  8,
                    "artOpacity":  0.44
-               }
+               },
+    "thefinals":  {
+                      "accent":  "#ff3b5c",
+                      "accent2":  "#5fe0d0",
+                      "artOpacity":  0.32,
+                      "pos":  "center 40%",
+                      "tint":  "#4a0a14",
+                      "mood":  "tactical",
+                      "radius":  6
+                  }
 }

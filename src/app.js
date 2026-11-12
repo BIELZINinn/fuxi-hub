@@ -138,7 +138,7 @@ function cardSub(p, st) {                                              // o subt
   if (gSort === 'recent' && st && st.last) return 'Jogou ' + ago(st.last);
   return p.assigned ? 'Preset: ' + ((prof(p.assigned) || {}).name || '—') : p.tag;
 }
-const GENRE = { fortnite: 'tiro', valorant: 'tiro', cs2: 'tiro', pubg: 'tiro', apex: 'tiro', warzone: 'tiro', overwatch: 'tiro', r6: 'tiro', tarkov: 'tiro', bf2042: 'tiro',
+const GENRE = { fortnite: 'tiro', valorant: 'tiro', cs2: 'tiro', pubg: 'tiro', apex: 'tiro', warzone: 'tiro', overwatch: 'tiro', r6: 'tiro', tarkov: 'tiro', bf2042: 'tiro', thefinals: 'tiro',
   gow: 'aventura', gta5: 'aventura', cyberpunk: 'aventura', eldenring: 'aventura', rdr2: 'aventura', witcher3: 'aventura', lol: 'esports', dota2: 'esports', rocketleague: 'esports' };
 const GENRES = [['all', 'Todos'], ['fav', '★ Favoritos'], ['tiro', 'Tiro'], ['aventura', 'Aventura'], ['esports', 'Esports']];
 let gFilter = 'all', gQuery = '', gEls = {}, gSort = 'fav';
@@ -1024,7 +1024,7 @@ function renderConfig() {
     document.querySelectorAll('#nfAnim button').forEach(b => b.onclick = () => hub.setNotify({ anim: b.dataset.v }).then(() => hub.testNotify('game')));
 
     $('#jgBox').innerHTML = `<div class="card"><h3>Reconhecimento de jogos</h3>
-      <div class="srow"><div class="lb"><b>Reconhecer qualquer jogo instalado</b><small>Além dos 19 da lista, o hub identifica jogos de Steam, Epic, Riot, Ubisoft, GOG, EA, Xbox e Rockstar pela pasta e aplica o preset "Jogos". Desligado, só vale a lista e o que você vinculou.</small></div>
+      <div class="srow"><div class="lb"><b>Reconhecer qualquer jogo instalado</b><small>Além dos 20 da lista, o hub identifica jogos de Steam, Epic, Riot, Ubisoft, GOG, EA, Xbox e Rockstar pela pasta e aplica o preset "Jogos". Desligado, só vale a lista e o que você vinculou.</small></div>
         <label class="switch"><span>Reconhecer</span><input type="checkbox" id="jgDet"><i></i></label></div>
       <div class="sec">Programas que você vinculou</div><div id="jgLinks"></div>
       <div class="sec">Jogos que você adicionou</div><div id="jgUser"></div></div>

@@ -35,7 +35,7 @@ Tudo roda **localmente no seu PC**: não há conta, nuvem própria, telemetria n
 - **Mixer por app**, volume geral e microfone, com atalho para mutar.
 
 ### Jogos
-- **19 jogos com preset próprio**, calibrados por jogo (passos, tiros, ambiente, cinemático…): Fortnite, Valorant, Counter-Strike 2, PUBG, God of War, Apex Legends, Call of Duty Warzone, Overwatch 2, Rainbow Six Siege, League of Legends, GTA V, Rocket League, Cyberpunk 2077, Elden Ring, Red Dead Redemption 2, Dota 2, Battlefield 2042, Escape from Tarkov e The Witcher 3.
+- **20 jogos com preset próprio**, calibrados por jogo (passos, tiros, ambiente, cinemático…): Fortnite, Valorant, Counter-Strike 2, PUBG, God of War, Apex Legends, Call of Duty Warzone, Overwatch 2, Rainbow Six Siege, League of Legends, GTA V, Rocket League, Cyberpunk 2077, Elden Ring, Red Dead Redemption 2, Dota 2, Battlefield 2042, Escape from Tarkov, The Witcher 3 e THE FINALS.
 - **Troca automática**: o hub percebe o jogo aberto, aplica o preset e volta ao anterior quando você fecha.
 - **Reconhece qualquer jogo instalado** (Steam, Epic, Riot, Ubisoft, GOG, EA, Xbox, Rockstar) e aplica o preset "Jogos".
 - **Regras por programa** (por exemplo, Discord → Chamadas).
@@ -144,7 +144,7 @@ Os utilitários nativos (`native/*.exe`: mixer/microfone, leitura de processos e
 ```
 main.js, preload*.js   processo principal do Electron (EQ, detecção de jogos, tray, atalhos, servidor local)
 src/                   interface (HTML/CSS/JS puro): abas, tutorial, perfil, mini-janela, espectro
-data/games.json        presets dos 19 jogos
+data/games.json        presets dos 20 jogos
 extension/             extensão MV3 do navegador (xCloud e GeForce NOW)
 native/                utilitários em C# (áudio, processos, HID) e script de compilação
 assets/                marca, fotos do fone, artes dos jogos e logos dos serviços
@@ -161,7 +161,7 @@ tools/                 scripts de desenvolvimento (capturas de tela, imagens, si
 
 ## Sons de entrada
 
-O app traz sons de entrada para Fortnite, Valorant, CS2, PUBG, Apex Legends e Rocket League, cortados de trechos de áudio ligados a esses jogos e músicas. Eles pertencem aos seus donos e estão aqui só para identificação e uso pessoal. Se você é dono de algum e quer a remoção, abra uma *issue*. Você pode trocar qualquer som colocando um arquivo com o id do jogo (por exemplo ortnite.mp3) na pasta de sons do app.
+O app traz sons de entrada para Fortnite, Valorant, CS2, PUBG, Apex Legends, Rocket League e THE FINALS, cortados de trechos de áudio ligados a esses jogos e músicas. Eles pertencem aos seus donos e estão aqui só para identificação e uso pessoal. Se você é dono de algum e quer a remoção, abra uma *issue*. Você pode trocar qualquer som colocando um arquivo com o id do jogo (por exemplo ortnite.mp3) na pasta de sons do app.
 
 ## Avisos legais
 

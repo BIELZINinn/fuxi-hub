@@ -37,3 +37,10 @@ body.rm *{animation:none!important}
 .ctl .iplay{display:none}.np.paused .ctl .iplay{display:block}.np.paused .ctl .ipause{display:none}
 .ctl .ipause{fill:none}.np.hov .pill{opacity:1;transform:none}
 .np.hov .disc{cursor:pointer}
+
+/* arrastar e tamanho */
+.sz{display:none;align-items:center;gap:7px;margin-top:8px;font-size:9.5px;color:#7d7d89;line-height:1.2}
+.np.hov .sz{display:flex}.sz span{flex:1;text-align:center}
+.sz button{width:22px;height:22px;border-radius:7px;border:1px solid #23232b;background:#0b0c0f;color:#e6e6ec;font:600 14px/1 "Segoe UI",sans-serif;cursor:pointer;padding:0;display:grid;place-items:center;flex:none}
+.sz button:hover{border-color:var(--c);color:var(--c)}
+.np.hov .disc{cursor:grab}.np.drag .disc{cursor:grabbing}.np.drag .pill{opacity:.0}

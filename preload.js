@@ -42,7 +42,7 @@ contextBridge.exposeInMainWorld('hub', {
   openReleasePage: () => inv('open-release-page'),
   micFxSet: p => inv('micfx-set', p),
   setNowPlaying: p => inv('set-nowplaying', p),
-  testNp: () => inv('test-np'),
+  testNp: s => inv('test-np', s),
   setBadge: p => inv('set-badge', p),
   testBadge: () => inv('test-badge'),
   setMedia: p => inv('set-media', p),

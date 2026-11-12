@@ -40,7 +40,10 @@ const CFG = {
   dota2: { mode: 'foto', model: 'realesrgan-x4plus', card: { fx: .5, fy: .5, zoom: 1 }, banner: { fx: .48, fy: .4, zoom: 1.9 }, icon: [380, 180, 420] },
   bf2042: { mode: 'foto', model: 'realesrgan-x4plus', card: { fx: .5, fy: .5, zoom: 1 }, banner: { fx: .62, fy: .5, zoom: 1.2 }, icon: [30, 0, 130] },
   tarkov: { mode: 'foto', model: 'realesrgan-x4plus', card: { fx: .5, fy: .5, zoom: 1 }, banner: { fx: .5, fy: .5, zoom: 1, mode: 'solid', fill: [8, 8, 8] }, icon: [50, 0, 127] },
-  witcher3: { mode: 'foto', model: 'realesrgan-x4plus', card: { fx: .5, fy: .4, zoom: 1 }, banner: { fx: .64, fy: .36, zoom: 1.05 }, icon: [18, 10, 200] }
+  witcher3: { mode: 'foto', model: 'realesrgan-x4plus', card: { fx: .5, fy: .4, zoom: 1 }, banner: { fx: .64, fy: .36, zoom: 1.05 }, icon: [18, 10, 200] },
+  // a origem (387x180) foi ampliada 2x antes (774x360) para a ampliação por IA rodar em uma passada; coordenadas neste tamanho
+  thefinals: { mode: 'foto', model: 'realesrgan-x4plus', card: { s: 1.938, ox: 0, oy: 250, mode: 'clamp' },
+    banner: { s: 1.244, ox: 1158, oy: 0, mode: 'solid', fillBox: [474, 5, 22, 40], crop: [470, 0, 304, 360], erase: [470, 190, 20, 75] }, icon: [470, 0, 300] }
 };
 
 const toJpg = (px, w, h, name) => {

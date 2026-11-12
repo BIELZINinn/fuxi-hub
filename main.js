@@ -66,7 +66,10 @@ const mergeBadge = b => { b = b || {}; return { enabled: b.enabled !== false, po
 const I18N_MAIN = { en: require('./src/i18n-en.js'), es: require('./src/i18n-es.js') };
 const tm = s => { const d = I18N_MAIN[settings && settings.ui && settings.ui.lang]; return (d && d.D[s]) || s; };
 // Tocando agora: disco pequeno girando no canto da tela enquanto o Spotify (ou o YouTube) toca
-const mergeNp = n => { n = n || {}; return { enabled: n.enabled !== false, pos: POSITIONS.includes(n.pos) ? n.pos : 'bottom-right', size: n.size === 'small' ? 'small' : 'normal', showTitle: n.showTitle !== false, youtube: !!n.youtube }; };
+// x, y: posição livre do disco (canto superior esquerdo da janela, em pixels da tela; null = usa o canto escolhido) · scale: tamanho (0,5 a 2,2)
+const mergeNp = n => { n = n || {}; const fin = v => (v !== null && v !== undefined && v !== '' && Number.isFinite(+v) ? Math.round(+v) : null); const free = fin(n.x) !== null && fin(n.y) !== null;
+  return { enabled: n.enabled !== false, pos: POSITIONS.includes(n.pos) ? n.pos : 'bottom-right', size: n.size === 'small' ? 'small' : 'normal', showTitle: n.showTitle !== false, youtube: !!n.youtube,
+    x: free ? fin(n.x) : null, y: free ? fin(n.y) : null, scale: Math.max(.5, Math.min(2.2, Math.round((+n.scale || 1) * 100) / 100)) }; };
 // Microfone: o hub aplica um ajuste (ganho, corte de graves, presença...) ao microfone do Fuxi pelo Equalizer APO, sem mexer na saída de som.
 const MIC_PRESETS = {
   natural: { gain: 0, hp: 0, warm: 0, presence: 0, air: 0, deess: 0 },
@@ -138,6 +141,7 @@ function loadSettings() {
   settings.ignoredGames = (Array.isArray(settings.ignoredGames) ? settings.ignoredGames : []).filter(s => /^[a-z0-9]{1,60}$/.test(s)).slice(-300);
   settings.userGames = (Array.isArray(settings.userGames) ? settings.userGames : []).filter(g => g && /^g_[a-z0-9]{1,40}$/.test(g.id) && typeof g.name === 'string' && /^#[0-9a-f]{6}$/i.test(g.color || '')).slice(0, 100)
     .map(g => ({ id: g.id, name: g.name.slice(0, 60), color: g.color, exe: /^[\w .()+\-]{1,80}\.exe$/i.test(g.exe || '') ? g.exe : '', dir: typeof g.dir === 'string' ? g.dir.slice(0, 260) : '', store: String(g.store || '').slice(0, 12) }));
+  settings.userGames = settings.userGames.filter(g => !DATA.games.some(x => !x.user && norm(x.name) === norm(g.name)));      // jogo que entrou na lista oficial deixa de ser 'adicionado por você'
   settings.userGames.forEach(registerUserGame);
 }
 function saveSettings() { try { fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2)); } catch {} }
@@ -320,7 +324,7 @@ const ALIAS = {
   gow: ['godofwar', 'godofwarragnarok'], apex: ['apexlegends'], warzone: ['callofduty', 'callofdutywarzone', 'warzone', 'callofdutyhq', 'callofdutymodernwarfare'],
   overwatch: ['overwatch', 'overwatch2'], r6: ['rainbowsixsiege', 'tomclancysrainbowsixsiege'], lol: ['leagueoflegends'], gta5: ['grandtheftautov', 'gta5', 'gtav'],
   rocketleague: ['rocketleague'], cyberpunk: ['cyberpunk2077'], eldenring: ['eldenring'], rdr2: ['reddeadredemption2', 'rdr2'], dota2: ['dota2', 'dota2beta'],
-  bf2042: ['battlefield2042', 'bf2042'], tarkov: ['escapefromtarkov'], witcher3: ['thewitcher3wildhunt', 'thewitcher3', 'witcher3']
+  bf2042: ['battlefield2042', 'bf2042'], tarkov: ['escapefromtarkov'], witcher3: ['thewitcher3wildhunt', 'thewitcher3', 'witcher3'], thefinals: ['thefinals']
 };
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 const LIB = [/\\steamapps\\common\\([^\\]+)\\/i, /\\epic games\\(?!launcher|epicgameslauncher|directxredist|portal|epic online services)([^\\]+)\\/i, /\\riot games\\(?!riot client)([^\\]+)\\/i,
@@ -826,7 +830,7 @@ function handleDetection(id, cloud) {
   if (id && cloud) cloudCur = { svc, name: state.gameName || cloud.name, id, start: now, ms: 0 };
   if (settings.auto) applyEq(effective(id) || restoreTarget()); else push();
   applySurround();                                                       // o nível de surround pode mudar por jogo
-  if (id) notifyGame(id); else if (prev) { notifyGameEnd(prev); if (sessMs >= 60000) setTimeout(() => notifySummary(prev, sessMs, wasCloud), 3500); }
+  if (id) [1500, 5000, 12000].forEach(ms => setTimeout(() => { try { raiseOverlays(); } catch {} }, ms));          // a janela do jogo aparece depois: traz o disco e o selo para a frente\n  if (id) notifyGame(id); else if (prev) { notifyGameEnd(prev); if (sessMs >= 60000) setTimeout(() => notifySummary(prev, sessMs, wasCloud), 3500); }
 }
 let cloudCur = null;
 function pushCloudLog(e) { if (!e.ms || e.ms < 20000) return; settings.cloud.log.unshift({ ...e }); settings.cloud.log = settings.cloud.log.slice(0, 100); saveSettings(); }
@@ -838,7 +842,7 @@ const parseWins = out => (out || '').split('\n').map(l => l.split('\t')).filter(
 // A estética (animações, espectro, fone animado, brilhos) pára; ao sair da tela cheia tudo volta sozinho.
 let fsHits = 0, fsLast = '';
 const OWN_PROC = /^(electron|fuxi hub|fuxihub)$/i;
-function setPerf(on) { if (!!state.perf === on) return; state.perf = on; npSig = ''; badgeKey = ''; try { updateNowPlaying(); updateBadge(); } catch {} push(); }
+function setPerf(on) { if (!!state.perf === on) return; state.perf = on; npSig = ''; badgeKey = ''; try { updateNowPlaying(); updateBadge(); raiseOverlays(); } catch {} push(); }
 async function checkFullscreen() {
   if (!settings.ui.gameMode) { fsHits = 0; return setPerf(false); }
   const o = await scan(['fs']); const [f, name] = String(o || '0').split('\t'), nm = (name || '').trim().toLowerCase(), ui = settings.ui;
@@ -904,6 +908,7 @@ ipcMain.handle('user-game-remove', (_, id) => {
 });
 async function pollGames() {
   checkFullscreen().catch(() => {});
+  if (state.game || state.perf) { try { raiseOverlays(); } catch {} }                       // o jogo pode ter ido para o topo por cima do disco, do selo e dos avisos
   markToday();
   const [po, wo] = await Promise.all([scan([]), (settings.cloud.enabled || settings.media.enabled) ? scan(['windows']) : Promise.resolve('')]);
   if (!po) return;
@@ -1020,24 +1025,41 @@ function npData() {
   const pl = opts.find(o => o.state === 'playing'); if (pl) return pl;
   const pa = opts.find(o => o.ctl); return pa && Date.now() - npLastPlay < 90000 ? pa : null;      // pausado: o disco fica 90 s (para você poder dar play) e some; cada janela é um processo
 }
+// Tamanho do disco: "scale" (roda do mouse / Ajustes) vezes 0,75 no modo "pequeno". A janela e o zoom da página andam juntos.
+const npScale = () => settings.nowplaying.scale * (settings.nowplaying.size === 'small' ? .75 : 1);
+const npDisc = () => (settings.nowplaying.size === 'small' ? 48 : 64) + 28;       // largura da faixa que o disco ocupa dentro da janela (disco + margens), na escala 1
+const npClamp = (x, y, W, H) => {                                                   // mantém a janela inteira dentro da área útil do monitor mais próximo
+  const wa = screen.getDisplayNearestPoint({ x: x + W / 2, y: y + H / 2 }).workArea;
+  return { x: Math.round(Math.max(wa.x, Math.min(wa.x + wa.width - W, x))), y: Math.round(Math.max(wa.y, Math.min(wa.y + wa.height - H, y))), wa };
+};
+// lado do disco dentro da janela: no canto direito (ou na metade direita do monitor) o disco fica à direita e o cartão abre para a esquerda
+function npSide(x, W, y, H) { const wa = screen.getDisplayNearestPoint({ x: x + W / 2, y: y + H / 2 }).workArea; return x + W / 2 > wa.x + wa.width / 2 ? 'right' : 'left'; }
+function npLayout() {
+  const c = settings.nowplaying, sc = npScale(), W = Math.round(380 * sc), H = Math.round(176 * sc), m = 8;
+  if (c.x !== null && c.y !== null) { const p = npClamp(c.x, c.y, W, H); return { x: p.x, y: p.y, W, H, sc, pos: 'custom-' + npSide(p.x, W, p.y, H) }; }
+  const wa = screen.getPrimaryDisplay().workArea;
+  return { x: /right$/.test(c.pos) ? wa.x + wa.width - W - m : wa.x + m, y: /^top/.test(c.pos) ? wa.y + m : wa.y + wa.height - H - m, W, H, sc, pos: c.pos };
+}
 function placeNp() {
   if (!npWin || npWin.isDestroyed()) return;
-  const wa = screen.getPrimaryDisplay().workArea, W = 380, H = 130, pos = settings.nowplaying.pos, m = 8;
-  npWin.setBounds({ x: /right$/.test(pos) ? wa.x + wa.width - W - m : wa.x + m, y: /^top/.test(pos) ? wa.y + m : wa.y + wa.height - H - m, width: W, height: H });
+  const L = npLayout(); npWin.setBounds({ x: L.x, y: L.y, width: L.W, height: L.H });
+  try { npWin.webContents.setZoomFactor(L.sc); } catch {}
 }
+// traz os avisos, o selo e o disco para a frente: jogos em tela cheia sem bordas costumam se pôr "sempre no topo" por cima de janelas que já existiam
+function raiseOverlays() { for (const w of [npWin, badgeWin, overlay]) if (w && !w.isDestroyed() && w.isVisible()) { try { w.setAlwaysOnTop(true, 'screen-saver'); w.moveTop(); } catch {} } }
 function ensureNp() {
   if (npWin && !npWin.isDestroyed()) return npWin;
   npReady = false;
   npWin = new BrowserWindow({ width: 380, height: 130, show: false, frame: false, transparent: true, resizable: false, movable: false, focusable: false, skipTaskbar: true, alwaysOnTop: true, hasShadow: false, fullscreenable: false,
     webPreferences: { preload: path.join(__dirname, 'preload-np.js'), contextIsolation: true } });
   npWin.setAlwaysOnTop(true, 'screen-saver'); npWin.setIgnoreMouseEvents(true, { forward: true }); npWin.setMenuBarVisibility(false); global.__np = npWin;
-  npWin.webContents.on('did-finish-load', () => { npReady = true; if (npLast) npWin.webContents.send('np', npLast); });
+  npWin.webContents.on('did-finish-load', () => { npReady = true; try { npWin.webContents.setZoomFactor(npScale()); } catch {} if (npLast) npWin.webContents.send('np', npLast); });
   npWin.loadFile(path.join(__dirname, 'src', 'np.html'));
   return npWin;
 }
 function updateNowPlaying() {
   if (!settings || !settings.nowplaying) return;
-  const d = npData(), c = settings.nowplaying, sig = JSON.stringify([d && { ...d, art: d.art ? d.art.length : 0 }, c.pos, c.size, c.showTitle, settings.ui.lang, !!state.perf]);
+  const d = npData(), c = settings.nowplaying, sig = JSON.stringify([d && { ...d, art: d.art ? d.art.length : 0 }, c.pos, c.size, c.showTitle, settings.ui.lang, !!state.perf, c.x, c.y, c.scale]);
   if (sig === npSig) return; npSig = sig;
   if (!d) {
     npLast = { show: false };
@@ -1045,7 +1067,7 @@ function updateNowPlaying() {
     return;
   }
   ensureNp(); placeNp();
-  npLast = { show: true, ...d, pos: c.pos, size: c.size, showTitle: c.showTitle, lang: settings.ui.lang, perf: !!state.perf };
+  npLast = { show: true, ...d, pos: npLayout().pos, size: c.size, showTitle: c.showTitle, lang: settings.ui.lang, perf: !!state.perf };
   if (npReady) npWin.webContents.send('np', npLast);
   if (!npWin.isVisible()) npWin.showInactive();
 }
@@ -1055,10 +1077,40 @@ ipcMain.handle('np-cmd', async (_, c) => {
   setTimeout(pollGames, 350); return /ok/.test(r.out);
 });
 ipcMain.on('np-hover', (_, on) => { if (npWin && !npWin.isDestroyed()) npWin.setIgnoreMouseEvents(!on, { forward: true }); });
-ipcMain.handle('set-nowplaying', (_, p) => { settings.nowplaying = mergeNp({ ...settings.nowplaying, ...(p || {}) }); saveSettings(); npSig = ''; updateNowPlaying(); push(); return settings.nowplaying; });
-ipcMain.handle('test-np', () => {                                                    // prévia: duas músicas de exemplo, trocando a cada 4 s
+// arrastar o disco: a janela acompanha o ponteiro (lido direto do sistema, sem depender de zoom/DPI da página); ao soltar, guarda a posição
+let npDrag = null;
+ipcMain.on('np-drag', (_, phase) => {
+  if (!npWin || npWin.isDestroyed()) return;
+  if (phase === 'start') { const b = npWin.getBounds(); npDrag = { p: screen.getCursorScreenPoint(), b, side: npSide(b.x, b.width, b.y, b.height) }; return; }
+  if (phase === 'cancel') { npDrag = null; return; }
+  if (!npDrag) return;
+  const p = screen.getCursorScreenPoint(), b = npDrag.b, nx = b.x + (p.x - npDrag.p.x), ny = b.y + (p.y - npDrag.p.y);
+  if (phase === 'move') { const c = npClamp(nx, ny, b.width, b.height); npWin.setBounds({ x: c.x, y: c.y, width: b.width, height: b.height }); return; }
+  if (phase === 'end') {
+    const cur = npWin.getBounds(), side = npSide(cur.x, cur.width, cur.y, cur.height), sc = npScale(), strip = npDisc() * sc; let x = cur.x;
+    if (side !== npDrag.side) x += side === 'right' ? strip - cur.width : cur.width - strip;                 // o disco virou de lado dentro da janela: compensa para ele ficar onde foi solto
+    const c = npClamp(x, cur.y, cur.width, cur.height); npDrag = null;
+    settings.nowplaying = mergeNp({ ...settings.nowplaying, x: c.x, y: c.y }); saveSettings(); npSig = ''; updateNowPlaying(); push();
+  }
+});
+// tamanho: troca a escala mantendo o disco no mesmo lugar (o cartão cresce para o lado de dentro da tela)
+function npSetScale(v) {
+  const old = npLayout(), c = settings.nowplaying, next = Math.max(.5, Math.min(2.2, Math.round(v * 100) / 100)); if (next === c.scale) return c.scale;
+  const free = c.x !== null && c.y !== null; c.scale = next; const nw = npLayout();
+  if (free) { const right = /right$/.test(old.pos), x = right ? old.x + old.W - nw.W : old.x, y = old.y + (old.H - nw.H) / 2; const cl = npClamp(x, y, nw.W, nw.H); c.x = cl.x; c.y = cl.y; }
+  saveSettings(); npSig = ''; updateNowPlaying(); push(); return next;
+}
+ipcMain.on('np-scale', (_, d) => { npSetScale(settings.nowplaying.scale + (+d || 0)); });
+ipcMain.handle('set-nowplaying', (_, p) => {
+  p = { ...(p || {}) };
+  if (p.pos !== undefined) { p.x = null; p.y = null; }                                              // escolher um canto volta ao posicionamento automático
+  const wantScale = p.scale; delete p.scale;
+  settings.nowplaying = mergeNp({ ...settings.nowplaying, ...p }); if (wantScale !== undefined) npSetScale(+wantScale || 1);
+  saveSettings(); npSig = ''; updateNowPlaying(); push(); return settings.nowplaying;
+});
+ipcMain.handle('test-np', (_, secs) => {                                                    // prévia: duas músicas de exemplo, trocando a cada 4 s (secs: quanto tempo fica na tela, para dar tempo de arrastar)
   const T = [{ title: 'Midnight City', artist: 'M83' }, { title: 'Blinding Lights', artist: 'The Weeknd' }, { title: 'Levitating', artist: 'Dua Lipa' }];
-  const until = Date.now() + 13000; let i = 0;
+  const until = Date.now() + Math.max(5, Math.min(120, +secs || 13)) * 1000; let i = 0;
   const step = () => { if (Date.now() >= until) { npPreview = null; npSig = ''; updateNowPlaying(); return; } npPreview = { until, track: { state: 'playing', ctl: true, ...T[i++ % T.length], art: '' } }; npSig = ''; updateNowPlaying(); setTimeout(step, 4200); };
   step(); return true;
 });
