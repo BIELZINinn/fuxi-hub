@@ -170,5 +170,25 @@
         "Si la app no abre bien con la GPU activada, la desactiva sola y vuelve a abrir. Con la GPU activada, el proceso gráfico ahora corre por separado, lo más estable."
       ]
     ]
+  },
+  "0.5.4": {
+    "pt": [
+      [
+        "Nova abertura \"Projeto\"",
+        "O Fuxi H3 é desenhado em traço de luz a partir da foto real, a foto aparece por varredura de luz, o fone pisca nas três cores num efeito de falha e surge a marca. Tem trilha sonora nova de 6 segundos. Escolha em Configurações → Animações."
+      ]
+    ],
+    "en": [
+      [
+        "New \"Blueprint\" intro",
+        "The Fuxi H3 is drawn in lines of light from the real photo, the photo appears with a light sweep, the headset flashes through its three colors in a glitch effect and the brand appears. It has a new 6-second soundtrack. Pick it in Settings → Animations."
+      ]
+    ],
+    "es": [
+      [
+        "Nueva apertura \"Plano\"",
+        "El Fuxi H3 se dibuja con trazos de luz a partir de la foto real, la foto aparece con un barrido de luz, los auriculares parpadean en sus tres colores con un efecto de falla y surge la marca. Tiene una banda sonora nueva de 6 segundos. Elígela en Ajustes → Animaciones."
+      ]
+    ]
   }
 }

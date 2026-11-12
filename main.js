@@ -45,8 +45,8 @@ function mergeHotkeys(h) {
   return m;
 }
 // ---- abertura (animação ao abrir o app) ----
-const INTRO_STYLES = ['off', 'pulse', 'scanner', 'waves', 'neon', 'cinema'];
-const mergeIntro = i => ({ style: INTRO_STYLES.includes(i && i.style) ? i.style : 'pulse', sound: !(i && i.sound === false) });
+const INTRO_STYLES = ['off', 'pulse', 'scanner', 'waves', 'neon', 'cinema', 'draft'];
+const mergeIntro = i => ({ style: INTRO_STYLES.includes(i && i.style) ? i.style : 'draft', sound: !(i && i.sound === false) });
 // ao iniciar com o Windows: abre na tela com a abertura; depois fica aberto ('stay') ou vai para a bandeja ('tray') após `delay` segundos
 // ---- cloud gaming (xCloud / GeForce NOW) e regras por programa ----
 const UI_THEMES = ['auto', 'cyan', 'green', 'purple', 'red', 'amber'];

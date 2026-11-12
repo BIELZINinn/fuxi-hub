@@ -1,6 +1,6 @@
 {
   "name": "fuxi-hub",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Hub para o Fuxi H3: equalizador, presets por jogo, mixer por app e visualizador animado",
   "author": "Gabriel",
   "main": "main.js",

@@ -1,11 +1,13 @@
 // Aberturas do Fuxi Hub: 5 estilos animados + som sintetizado. playIntro(estilo, { sound, volume, preview, onEnd })
 (function () {
+  const TS = (window.INTRO_TRACK && window.INTRO_TRACK.scale) || 1;          // escala de tempo da abertura Projeto (animação e trilha andam juntas)
   const INTRO = {
     pulse:   { name: 'Pulso',   desc: 'O fone se desenha em traço de luz, um anel de energia se abre e o nome surge.', ms: 3500 },
     scanner: { name: 'Scanner', desc: 'Uma linha de luz varre a tela e revela a marca, com um clarão no fim.',        ms: 3300 },
     waves:   { name: 'Ondas',   desc: 'Barras de áudio dançam em onda e se fundem na marca.',                         ms: 3700 },
     neon:    { name: 'Neon',    desc: 'Acende piscando como um letreiro, com brilho e um leve glitch.',               ms: 3400 },
-    cinema:  { name: 'Cinema',  desc: 'Entrada lenta e elegante: foco suave, uma linha de luz e só o essencial.',     ms: 3000 }
+    cinema:  { name: 'Cinema',  desc: 'Entrada lenta e elegante: foco suave, uma linha de luz e só o essencial.',     ms: 3000 },
+    draft:   { name: 'Projeto', desc: 'O fone é desenhado em traço de luz, acende e o som se espalha até a marca surgir.', ms: Math.round(7100 * TS) }
   };
   window.INTRO_STYLES = INTRO;
 
@@ -50,27 +52,88 @@
     waves: () => `<div class="i-bars">${Array.from({ length: 52 }, (_, i) => `<i style="--i:${i};--h:${.3 + Math.abs(Math.sin(i * .33)) * .7}"></i>`).join('')}</div>
       <div class="i-wlogo">${window.fuxiMark('iw', 'i-mark')}${word()}<div class="i-sub">Fuxi H3 · Hub de áudio</div></div>`,
     neon: () => `<div class="i-nmark">${window.fuxiMark('in', 'i-mark')}</div>${word()}<div class="i-uline"></div><div class="i-sub">Fuxi H3 · Hub de áudio</div>`,
-    cinema: () => `<div class="i-bloom"></div><div class="i-cmark">${window.fuxiMark('ic', 'i-mark')}</div><div class="i-cline"></div>${word()}<div class="i-sub">Fuxi H3 · Hub de áudio</div>`
+    cinema: () => `<div class="i-bloom"></div><div class="i-cmark">${window.fuxiMark('ic', 'i-mark')}</div><div class="i-cline"></div>${word()}<div class="i-sub">Fuxi H3 · Hub de áudio</div>`,
+    draft: () => DRAFT()
   };
-  let timer = null, endCb = null, skipHandler = null;
+  // ---------- "Projeto": o fone desenhado em traço de luz ----------
+  // Desenho técnico (vista frontal) com traços que se desenham sozinhos; depois acende, o som se espalha pelas conchas, a curva do equalizador aparece e a marca surge.
+  const DRAFT = () => {                                          // o desenho vem da foto real do Fuxi H3 (tools/lineart.js -> herolines.js): contornos da silhueta, casco, almofadas, haste, microfone e aberturas
+    const H = window.HERO_LINES || { w: 874, h: 838, paths: [] }, g = 'dg' + Math.random().toString(36).slice(2, 6);
+    const ps = H.paths.map((p, i) => ({ ...p, i })), delay = new Map(), diag = (a, b) => (a.cx + a.cy) - (b.cx + b.cy);
+    ps.filter(p => p.k === 0).forEach((p, i) => delay.set(p.i, .45 + i * .12));                       // silhueta primeiro
+    ps.filter(p => p.k === 1).sort(diag).forEach((p, i) => delay.set(p.i, 1 + i * .05));               // formas principais, do microfone para a concha da frente
+    ps.filter(p => p.k === 2).sort(diag).forEach((p, i) => delay.set(p.i, 1.7 + i * .035));            // detalhes
+    const dur = p => (p.k === 0 ? 2.1 : p.k === 1 ? 1.1 : .75);
+    const lines = ps.map(p => `<path class="d-s k${p.k}" pathLength="100" d="${p.d}" style="animation-delay:${delay.get(p.i).toFixed(2)}s;animation-duration:${dur(p)}s"/>`).join('');
+    const bars = Array.from({ length: 46 }, (_, i) => { const x = i / 45, h = .22 + .42 * Math.exp(-Math.pow((x - .16) / .13, 2)) + .3 * Math.exp(-Math.pow((x - .62) / .17, 2)) + .12 * Math.sin(i * 1.7) ** 2; return `<i style="--i:${i};--h:${h.toFixed(3)}"></i>`; }).join('');
+    return `<canvas class="d-fx"></canvas><div class="d-vig"></div>
+    <div class="d-art" style="aspect-ratio:${H.w}/${H.h}">
+      <svg class="d-con" viewBox="0 0 100 100"><circle class="d-ring" cx="50" cy="50" r="49" pathLength="100"/><circle class="d-ticks" cx="50" cy="50" r="51.6"/><path class="d-cross" pathLength="100" d="M 50 -2 V 3 M 50 102 V 97 M -2 50 H 3 M 102 50 H 97"/></svg>
+      <img class="d-photo" src="../assets/fuxi/hero.png" alt=""><img class="d-photo d-p2" src="../assets/fuxi/hero-bw.png" alt=""><img class="d-photo d-p3" src="../assets/fuxi/hero-black.png" alt="">
+      <svg class="d-svg" viewBox="0 0 ${H.w} ${H.h}"><defs><linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${H.w}" y2="${H.h}"><stop offset="0" stop-color="#2ef2ff"/><stop offset=".55" stop-color="#6fb4ff"/><stop offset="1" stop-color="#9a7bff"/></linearGradient></defs>
+        <g class="d-lines" style="--g:url(#${g})">${lines}</g>
+        <g class="d-lab"><path class="d-lead" pathLength="100" d="M 132 142 L 196 108 H 262"/><text x="270" y="113">MICROFONE</text>
+          <path class="d-lead" pathLength="100" d="M 772 452 H 842"/><text x="850" y="457">HASTE</text></g></svg>
+      <div class="d-scan"></div><div class="d-gl"><i></i><i></i></div>
+    </div>
+    <div class="d-eq"><div class="d-bars">${bars}</div><svg viewBox="0 0 520 60" class="d-curve"><path pathLength="100" d="M 4 40 C 40 40, 52 12, 92 14 S 150 44, 200 38 S 262 22, 300 24 S 360 8, 410 20 S 480 34, 516 26"/></svg></div>
+    <div class="i-word d-word">${[...'FUXI'].map((l, i) => `<i style="--k:${i}">${l}</i>`).join('')}<span class="gap"></span>${[...'HUB'].map((l, i) => `<i class="hb" style="--k:${i + 4}">${l}</i>`).join('')}</div>
+    <div class="i-sub d-sub">Fuxi H3 · Hub de áudio</div>`;
+  };
+  function dustFx(root) {                                         // poeira de luz flutuando ao fundo (canvas leve, só enquanto a abertura roda)
+    const cv = root.querySelector('canvas.d-fx'); if (!cv) return null;
+    const ctx = cv.getContext('2d'); let w = cv.width = cv.clientWidth, h = cv.height = cv.clientHeight;
+    const P = Array.from({ length: 110 }, () => ({ x: Math.random() * w, y: Math.random() * h, r: .4 + Math.random() * 1.5, v: 6 + Math.random() * 18, a: Math.random() * 6.28, c: Math.random() < .6 ? '46,242,255' : '138,109,255' }));
+    let raf = 0, last = performance.now(); const t0 = last;
+    const f = now => {
+      const dt = Math.min(.05, (now - last) / 1000), e = (now - t0) / 1000; last = now; ctx.clearRect(0, 0, w, h);
+      const fade = Math.min(1, e / 1.2) * (e > 6.4 * TS ? Math.max(0, 1 - (e - 6.4 * TS) / (.7 * TS)) : 1);
+      for (const p of P) {
+        p.y -= p.v * dt; p.x += Math.sin(p.a + e * .4) * 6 * dt; if (p.y < -4) { p.y = h + 4; p.x = Math.random() * w; }
+        ctx.globalAlpha = (.35 + .65 * Math.abs(Math.sin(p.a + e * .9))) * .55 * fade; ctx.fillStyle = 'rgb(' + p.c + ')';
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+      }
+      raf = requestAnimationFrame(f);
+    };
+    raf = requestAnimationFrame(f); return () => cancelAnimationFrame(raf);
+  }
+  const AFTER = { draft: dustFx };
+  // trilhas completas (introtrack.js): saem por um canal próprio, que some rápido se a abertura for pulada
+  let trackOut = null;
+  function playTrack(style, vol) {
+    if (!actx) actx = new AudioContext(); if (actx.state === 'suspended') actx.resume();
+    stopTrack(true);
+    trackOut = actx.createGain(); trackOut.gain.value = Math.max(0, Math.min(1, vol)); trackOut.connect(actx.destination);
+    window.INTRO_TRACK[style](actx, trackOut, actx.currentTime + .08);
+  }
+  function stopTrack(now) {
+    if (!trackOut) return; const g = trackOut; trackOut = null;
+    try { g.gain.setTargetAtTime(0, actx.currentTime, now ? .01 : .06); } catch {}
+    setTimeout(() => { try { g.disconnect(); } catch {} }, 600);
+  }
+  let timer = null, endCb = null, skipHandler = null, stopFx = null;
   function finish(quick) {
     const root = el(); if (!root || !root.classList.contains('on')) return;
     clearTimeout(timer); document.removeEventListener('keydown', skipHandler, true);
+    if (quick) stopTrack(false);
     root.classList.add('out');
     const cb = endCb; endCb = null;
-    setTimeout(() => { root.classList.remove('on', 'out'); root.innerHTML = ''; if (cb) cb(); }, quick ? 250 : 550);
+    setTimeout(() => { if (stopFx) { stopFx(); stopFx = null; } root.classList.remove('on', 'out'); root.innerHTML = ''; if (cb) cb(); }, quick ? 250 : 550);
   }
   window.playIntro = function (style, opt = {}) {
     const def = INTRO[style]; if (!def) return;
     const root = el(); if (!root) return;
     if (root.classList.contains('on')) { clearTimeout(timer); document.removeEventListener('keydown', skipHandler, true); }
+    if (stopFx) { stopFx(); stopFx = null; }
     root.className = 'on'; root.dataset.style = style;
     root.innerHTML = `<div class="i-stage i-${style}">${BUILD[style]()}</div><div class="i-hint">${opt.preview ? 'Clique ou aperte Esc para fechar' : 'Clique para pular'}</div>`;
+    if (AFTER[style]) stopFx = AFTER[style](root);
+    if (style === 'draft' && TS !== 1) { void root.offsetWidth; try { root.getAnimations({ subtree: true }).forEach(a => { a.playbackRate = 1 / TS; }); } catch {} }     // a animação inteira roda na mesma escala da trilha
     endCb = opt.onEnd || null;
     skipHandler = e => { if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); finish(true); } };
     document.addEventListener('keydown', skipHandler, true);
     root.onclick = () => finish(true);
-    if (opt.sound) { try { SOUND[style](getBus(opt.volume == null ? .6 : opt.volume)); } catch {} }
+    if (opt.sound) { try { const vol = opt.volume == null ? .6 : opt.volume; if (window.INTRO_TRACK && window.INTRO_TRACK[style]) playTrack(style, vol); else SOUND[style](getBus(vol)); } catch {} }
     timer = setTimeout(() => finish(false), def.ms);
   };
 })();
