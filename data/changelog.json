@@ -190,5 +190,25 @@
         "El Fuxi H3 se dibuja con trazos de luz a partir de la foto real, la foto aparece con un barrido de luz, los auriculares parpadean en sus tres colores con un efecto de falla y surge la marca. Tiene una banda sonora nueva de 6 segundos. Elígela en Ajustes → Animaciones."
       ]
     ]
+  },
+  "0.5.5": {
+    "pt": [
+      [
+        "Abertura \"Projeto\" como padrão",
+        "Quem estava com a abertura antiga (\"Pulso\") passa para a nova \"Projeto\". Quem escolheu outra abertura continua com ela. Dá para trocar em Configurações → Animações."
+      ]
+    ],
+    "en": [
+      [
+        "\"Blueprint\" intro by default",
+        "If you were on the old intro (\"Pulse\"), you now get the new \"Blueprint\" one. If you picked another intro, it stays. You can change it in Settings → Animations."
+      ]
+    ],
+    "es": [
+      [
+        "Apertura \"Plano\" por defecto",
+        "Si tenías la apertura antigua (\"Pulso\"), ahora pasas a la nueva \"Plano\". Si elegiste otra apertura, se mantiene. Puedes cambiarla en Ajustes → Animaciones."
+      ]
+    ]
   }
 }

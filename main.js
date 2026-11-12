@@ -129,6 +129,7 @@ function loadSettings() {
   settings.ach = (settings.ach && typeof settings.ach === 'object') ? Object.fromEntries(Object.entries(settings.ach).filter(([k, v]) => /^[\w-]{1,30}$/.test(k) && Number.isFinite(+v)).slice(0, 80)) : {};
   settings.achSeeded = !!settings.achSeeded;
   settings.intro = mergeIntro(settings.intro);
+  if (!(settings.introV >= 2)) { if (settings.intro.style === 'pulse') settings.intro.style = 'draft'; settings.introV = 2; }   // 0.5.4: quem ficou com a abertura padrão antiga ("Pulso") passa para a nova ("Projeto"); quem escolheu outra mantém
   settings.startup = mergeStartup(settings.startup);
   settings.tutorial = { done: !!(settings.tutorial && settings.tutorial.done) };
   settings.cloud = mergeCloud(settings.cloud);
