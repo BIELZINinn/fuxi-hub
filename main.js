@@ -827,6 +827,7 @@ function handleDetection(id, cloud) {
   if (prev && state.cloud && cloudCur) { cloudCur.ms = now - cloudCur.start; pushCloudLog(cloudCur); cloudCur = null; }       // fecha a sessão cloud anterior
   state.cloud = cloud ? { svc, name: cloud.name, label: SVC_LABEL[svc] } : null;
   state.game = id; state.gameName = id ? ((findProfile(id) || {}).name || cloud && cloud.name || null) : null;
+  if (id) { try { if (npWin && !npWin.isDestroyed()) npWin.setIgnoreMouseEvents(true, { forward: true }); } catch {} }   // jogo detectado: disco do Spotify solta o mouse na hora
   if (id && cloud) cloudCur = { svc, name: state.gameName || cloud.name, id, start: now, ms: 0 };
   if (settings.auto) applyEq(effective(id) || restoreTarget()); else push();
   applySurround();                                                       // o nível de surround pode mudar por jogo
@@ -1070,13 +1071,15 @@ function updateNowPlaying() {
   npLast = { show: true, ...d, pos: npLayout().pos, size: c.size, showTitle: c.showTitle, lang: settings.ui.lang, perf: !!state.perf };
   if (npReady) npWin.webContents.send('np', npLast);
   if (!npWin.isVisible()) npWin.showInactive();
+  if (state.game) { try { npWin.setIgnoreMouseEvents(true, { forward: true }); } catch {} }   // entrou num jogo com o mouse sobre o disco: solta o mouse na hora
 }
 ipcMain.handle('np-cmd', async (_, c) => {
   if (!['prev', 'toggle', 'next', 'play', 'pause'].includes(c)) return false;
   const r = await run('mediactl.exe', ['cmd', c, 'spotify']); npLastPlay = Date.now();
   setTimeout(pollGames, 350); return /ok/.test(r.out);
 });
-ipcMain.on('np-hover', (_, on) => { if (npWin && !npWin.isDestroyed()) npWin.setIgnoreMouseEvents(!on, { forward: true }); });
+// jogando: o disco nunca captura o mouse (nem foco), para não atrapalhar a câmera e os cliques do jogo; fora do jogo, continua clicável/arrastável
+ipcMain.on('np-hover', (_, on) => { if (npWin && !npWin.isDestroyed()) npWin.setIgnoreMouseEvents(state.game ? true : !on, { forward: true }); });
 // arrastar o disco: a janela acompanha o ponteiro (lido direto do sistema, sem depender de zoom/DPI da página); ao soltar, guarda a posição
 let npDrag = null;
 ipcMain.on('np-drag', (_, phase) => {
