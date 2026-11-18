@@ -1,4 +1,6 @@
-const { app, BrowserWindow, ipcMain, shell, dialog, screen, Tray, Menu, globalShortcut, nativeImage, desktopCapturer, session, net } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, screen, Tray, Menu, globalShortcut, nativeImage, desktopCapturer, session, net, safeStorage } = require('electron');
+const CL = require('./clips');                                                           // clipes dos jogos: buffer de replay + atalho para salvar
+const GD = require('./gdrive');                                                        // login Google + sincronização do backup no Google Drive
 const { execFile, spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
@@ -36,7 +38,7 @@ function mergeNotify(n) {                    // completa o que falta e corrige v
   return m;
 }
 // ---- atalhos globais e bandeja ----
-const HOTKEY_DEFAULT = { enabled: true, keys: { micMute: 'Ctrl+Alt+M', nextPreset: 'Ctrl+Alt+Right', prevPreset: 'Ctrl+Alt+Left', bypass: 'Ctrl+Alt+B', show: 'Ctrl+Alt+F', mini: 'Ctrl+Alt+V' } };
+const HOTKEY_DEFAULT = { enabled: true, keys: { clip: 'Alt+F10', micMute: 'Ctrl+Alt+M', nextPreset: 'Ctrl+Alt+Right', prevPreset: 'Ctrl+Alt+Left', bypass: 'Ctrl+Alt+B', show: 'Ctrl+Alt+F', mini: 'Ctrl+Alt+V' } };
 const HOTKEY_ACTIONS = Object.keys(HOTKEY_DEFAULT.keys);
 const ACCEL_OK = /^((Ctrl|Alt|Shift|Super)\+)+([A-Z0-9]|F([1-9]|1[0-9]|2[0-4])|Left|Right|Up|Down|Space|Home|End|PageUp|PageDown|Insert|Delete|Plus|Tab)$/;
 function mergeHotkeys(h) {
@@ -135,7 +137,7 @@ function loadSettings() {
   if (!(settings.introV >= 2)) { if (settings.intro.style === 'pulse') settings.intro.style = 'draft'; settings.introV = 2; }   // 0.5.4: quem ficou com a abertura padrão antiga ("Pulso") passa para a nova ("Projeto"); quem escolheu outra mantém
   settings.startup = mergeStartup(settings.startup);
   settings.tutorial = { done: !!(settings.tutorial && settings.tutorial.done) };
-  settings.cloud = mergeCloud(settings.cloud);
+  settings.cloud = mergeCloud(settings.cloud); settings.clips = CL.merge(settings.clips);
   settings.rules = mergeRules(settings.rules); settings.rulesEnabled = settings.rulesEnabled !== false;
   settings.surround = mergeSurround(settings.surround);
   settings.ignoredGames = (Array.isArray(settings.ignoredGames) ? settings.ignoredGames : []).filter(s => /^[a-z0-9]{1,60}$/.test(s)).slice(-300);
@@ -144,7 +146,7 @@ function loadSettings() {
   settings.userGames = settings.userGames.filter(g => !DATA.games.some(x => !x.user && norm(x.name) === norm(g.name)));      // jogo que entrou na lista oficial deixa de ser 'adicionado por você'
   settings.userGames.forEach(registerUserGame);
 }
-function saveSettings() { try { fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2)); } catch {} }
+function saveSettings() { try { fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2)); } catch {} try { if (!process.env.FUXI_SHOTS) GD.schedule(); } catch {} }
 
 // ---------- perfis ----------
 // suffix: '' = card da aba Jogos · '-banner' = aviso de modo de jogo (largo) · '-icon' = aviso compacto (quadrado). Sem a variante, usa a arte do card.
@@ -390,7 +392,7 @@ ipcMain.handle('open-data-folder', () => shell.openPath(app.getPath('userData'))
 // ---------- Backup e restauração ----------
 // O backup guarda tudo que é seu: presets (editados e criados), preset por jogo, avisos, atalhos, abertura, favoritos, estatísticas e programas vinculados.
 let lastBackup = null;
-const BACKUP_KEYS = ['auto', 'overrides', 'manual', 'custom', 'assign', 'notify', 'hotkeys', 'closeToTray', 'intro', 'exes', 'favorites', 'stats', 'ui', 'detectGeneric', 'audioSwitch', 'micVol', 'startup', 'cloud', 'media', 'badge', 'nowplaying', 'micfx', 'rules', 'rulesEnabled', 'surround'];
+const BACKUP_KEYS = ['auto', 'overrides', 'manual', 'custom', 'assign', 'notify', 'hotkeys', 'closeToTray', 'intro', 'exes', 'favorites', 'stats', 'ui', 'detectGeneric', 'audioSwitch', 'micVol', 'startup', 'cloud', 'media', 'badge', 'nowplaying', 'micfx', 'rules', 'rulesEnabled', 'surround', 'clips'];
 const ID_OK = /^[\w-]{1,40}$/;
 const makeBackup = () => { const s = {}; for (const k of BACKUP_KEYS) if (k in settings) s[k] = settings[k]; return { app: 'fuxi-hub', version: app.getVersion(), exportedAt: new Date().toISOString(), settings: s }; };
 const backupDir = () => { const d = path.join(app.getPath('userData'), 'backups'); fs.mkdirSync(d, { recursive: true }); return d; };
@@ -424,6 +426,7 @@ function applyBackup(b) {                                                       
   if (isObj(s.nowplaying)) next.nowplaying = mergeNp(s.nowplaying);
   if (isObj(s.micfx)) next.micfx = mergeMic(s.micfx);
   if (isObj(s.surround)) next.surround = mergeSurround(s.surround);
+  if (isObj(s.clips)) { next.clips = CL.merge({ ...s.clips, enabled: next.clips && next.clips.enabled, dir: next.clips && next.clips.dir }); }   // liga/desliga e pasta são deste PC; o resto (tempo, qualidade, microfone) acompanha o backup
   if (Array.isArray(s.rules)) next.rules = mergeRules(s.rules);
   if (typeof s.rulesEnabled === 'boolean') next.rulesEnabled = s.rulesEnabled;
   if (typeof s.closeToTray === 'boolean') next.closeToTray = s.closeToTray;
@@ -457,6 +460,35 @@ ipcMain.handle('backup-import', async (_, fromAuto) => {
   return applyBackup(b);
 });
 ipcMain.handle('open-backup-folder', () => shell.openPath(backupDir()));
+// ---------- Clipes ----------
+ipcMain.handle('clips-set', (_, patch) => {
+  const old = settings.clips; settings.clips = CL.merge({ ...old, ...(patch || {}) }); saveSettings();
+  const n = settings.clips, hw = ['seconds', 'fps', 'res', 'bitrate', 'mic', 'micGain', 'monitor', 'encoder'].some(k => old[k] !== n[k]);
+  if (hw && CL.status().running) CL.restart(); else CL.sync();
+  push(); return n;
+});
+ipcMain.handle('clips-install', async () => { const r = await CL.install(); if (r.ok) CL.sync(); return r; });
+ipcMain.handle('clips-save', () => saveClip());
+ipcMain.handle('clips-list', () => CL.list());
+ipcMain.handle('clips-delete', (_, n) => CL.remove(n));
+ipcMain.handle('clips-rename', (_, n, to) => CL.rename(n, to));
+ipcMain.handle('clips-trim', (_, n, a, b) => CL.trim(n, a, b));
+ipcMain.handle('clips-open-folder', () => shell.openPath(CL.status().dir));
+ipcMain.handle('clips-show', (_, n) => { const p = path.join(CL.status().dir, path.basename(String(n || ''))); if (fs.existsSync(p)) shell.showItemInFolder(p); });
+ipcMain.handle('clips-choose-dir', async () => {
+  const r = await dialog.showOpenDialog(win, { title: tm('Pasta dos clipes'), properties: ['openDirectory', 'createDirectory'], defaultPath: CL.status().dir });
+  if (r.canceled || !r.filePaths[0]) return null;
+  settings.clips = CL.merge({ ...settings.clips, dir: r.filePaths[0] }); saveSettings(); push(); return settings.clips.dir;
+});
+// ---------- Google Drive ----------
+ipcMain.handle('gdrive-set-client', (_, id, secret) => GD.setClient(id, secret));
+ipcMain.handle('gdrive-login', () => GD.login());
+ipcMain.handle('gdrive-logout', () => GD.logout());
+ipcMain.handle('gdrive-sync', () => GD.sync());
+ipcMain.handle('gdrive-restore', async () => {
+  const c = await dialog.showMessageBox(win, { type: 'question', buttons: [tm('Restaurar'), tm('Cancelar')], defaultId: 1, cancelId: 1, title: tm('Google Drive'), message: tm('Substituir suas configurações atuais pelo backup do Google Drive?') });
+  return c.response === 0 ? GD.sync({ forcePull: true }) : null;
+});
 if (process.env.FUXI_SHOTS) ipcMain.handle('test-hook', async (_, what) => {     // só existe nos testes automáticos
   const out = {};
   if (what === 'backup') {
@@ -827,6 +859,7 @@ function handleDetection(id, cloud) {
   if (prev && state.cloud && cloudCur) { cloudCur.ms = now - cloudCur.start; pushCloudLog(cloudCur); cloudCur = null; }       // fecha a sessão cloud anterior
   state.cloud = cloud ? { svc, name: cloud.name, label: SVC_LABEL[svc] } : null;
   state.game = id; state.gameName = id ? ((findProfile(id) || {}).name || cloud && cloud.name || null) : null;
+  try { CL.sync(); } catch {}                                                                                             // jogo abriu/fechou: liga/desliga o buffer de clipes
   if (id) { try { if (npWin && !npWin.isDestroyed()) npWin.setIgnoreMouseEvents(true, { forward: true }); } catch {} }   // jogo detectado: disco do Spotify solta o mouse na hora
   if (id && cloud) cloudCur = { svc, name: state.gameName || cloud.name, id, start: now, ms: 0 };
   if (settings.auto) applyEq(effective(id) || restoreTarget()); else push();
@@ -939,7 +972,7 @@ async function pollGames() {
   }
 }
 
-function snapshot() { return { ...state, auto: settings.auto, notify: settings.notify, hotkeys: settings.hotkeys, hotkeyErrors, closeToTray: settings.closeToTray, autostart, intro: settings.intro, startup: settings.startup, favorites: settings.favorites, stats: settings.stats, ui: settings.ui, detectGeneric: settings.detectGeneric, audioSwitch: settings.audioSwitch, lastBackup, surroundCfg: settings.surround, hesuvi: hesuviInfo(), cloudCfg: settings.cloud, mediaCfg: settings.media, badgeCfg: settings.badge, npCfg: settings.nowplaying, packaged: app.isPackaged, news: newsFor(),  gpu: GPU_ON, gpuSaved: settings.gpu === true, remoteCfg: { enabled: settings.remote.enabled, on: !!remoteSrv }, micFx: settings.micfx, updateCfg: settings.update, update: state.update || { status: 'idle' }, micApo: state.micApo || null, tutorial: settings.tutorial, ach: settings.ach, achSeeded: settings.achSeeded, usageDays: settings.usage.days, rules: settings.rules, rulesEnabled: settings.rulesEnabled, version: app.getVersion(), dataDir: app.getPath('userData'),
+function snapshot() { return { ...state, gdrive: GD.status(), clips: CL.status(), clipsCfg: settings.clips, auto: settings.auto, notify: settings.notify, hotkeys: settings.hotkeys, hotkeyErrors, closeToTray: settings.closeToTray, autostart, intro: settings.intro, startup: settings.startup, favorites: settings.favorites, stats: settings.stats, ui: settings.ui, detectGeneric: settings.detectGeneric, audioSwitch: settings.audioSwitch, lastBackup, surroundCfg: settings.surround, hesuvi: hesuviInfo(), cloudCfg: settings.cloud, mediaCfg: settings.media, badgeCfg: settings.badge, npCfg: settings.nowplaying, packaged: app.isPackaged, news: newsFor(),  gpu: GPU_ON, gpuSaved: settings.gpu === true, remoteCfg: { enabled: settings.remote.enabled, on: !!remoteSrv }, micFx: settings.micfx, updateCfg: settings.update, update: state.update || { status: 'idle' }, micApo: state.micApo || null, tutorial: settings.tutorial, ach: settings.ach, achSeeded: settings.achSeeded, usageDays: settings.usage.days, rules: settings.rules, rulesEnabled: settings.rulesEnabled, version: app.getVersion(), dataDir: app.getPath('userData'),
   skipIntro: process.argv.includes('--hidden') || !!process.env.FUXI_SHOTS || winCreated > 1, noSound: !!process.env.FUXI_NO_SOUND,   /* início escondido (Windows) e testes não tocam a abertura */ profiles: allProfiles(), bands: BANDS, engine: { ...(state.engine || engineStatus()), registered: !!(state.apo && state.apo.fuxi), apoDevices: state.apo ? state.apo.count : 0 } }; }
 function push() { try { updateBadge(); } catch {} if (win && !win.isDestroyed()) win.webContents.send('state', snapshot()); if (mini && !mini.isDestroyed() && mini.isVisible()) mini.webContents.send('state', snapshot()); }
 let hotkeyErrors = {};
@@ -1365,7 +1398,15 @@ function toggleBypass() {                                      // liga/desliga o
   } catch {}
 }
 const toggleAuto = v => { settings.auto = v; saveSettings(); if (v && state.game) applyEq(effective(state.game)); else push(); };
-const ACTIONS = { micMute: toggleMic, nextPreset: () => cyclePreset(1), prevPreset: () => cyclePreset(-1), bypass: toggleBypass, show: showWin, mini: () => toggleMini() };
+async function saveClip(secs) {
+  const c = settings.clips;
+  if (!c.enabled) return notify('info', { id: 'clip', title: 'Clipes desligados', body: 'Ative em Clipes para gravar os últimos segundos do jogo.', icon: 'info', color: '#ffb02e' }, true);
+  const r = await CL.save(secs);
+  if (r.ok) notify('info', { id: 'clip', title: 'Clipe salvo', body: r.name.replace(/\.mp4$/i, ''), icon: 'info', color: '#2ef2ff' }, true);
+  else notify('info', { id: 'clip', title: 'Não salvei o clipe', body: r.error || 'Erro desconhecido', icon: 'info', color: '#ff4d6d' }, true);
+  return r;
+}
+const ACTIONS = { clip: () => saveClip(), micMute: toggleMic, nextPreset: () => cyclePreset(1), prevPreset: () => cyclePreset(-1), bypass: toggleBypass, show: showWin, mini: () => toggleMini() };
 ipcMain.handle('run-action', (_, a) => { if (ACTIONS[a]) return ACTIONS[a](); });
 
 function registerHotkeys() {
@@ -1681,7 +1722,10 @@ app.whenReady().then(() => {
   session.defaultSession.setDisplayMediaRequestHandler((req, cb) => { desktopCapturer.getSources({ types: ['screen'] }).then(s => cb({ video: s[0], audio: 'loopback' })).catch(() => cb({})); });     // áudio do sistema para o visualizador
   if (!gotLock) return;
   settingsPath = path.join(app.getPath('userData'), 'settings.json');
-  loadSettings(); saveSettings(); startExtServer(); if (settings.remote.enabled) setTimeout(startRemote, 1500);
+  CL.init({ app, cfg: () => settings.clips, native, onChange: () => push(), inGame: () => !!state.game, gameName: () => state.gameName, screenH: i => { const d = screen.getAllDisplays(); const x = d[i] || screen.getPrimaryDisplay(); return Math.round(x.size.height * x.scaleFactor); }, fileUrl: p => pathToFileURL(p).href,
+    trash: p => shell.trashItem(p).catch(() => { try { fs.unlinkSync(p); } catch {} }) });
+  GD.init({ app, shell, dialog, safeStorage, getWin: () => (win && !win.isDestroyed() ? win : null), makeBackup, applyBackup, tm, lang: () => settings.ui.lang, onChange: () => push() });
+  loadSettings(); saveSettings(); startExtServer(); if (!process.env.FUXI_SHOTS) { GD.start(); setTimeout(() => { try { CL.sync(); } catch {} }, 3000); } if (settings.remote.enabled) setTimeout(startRemote, 1500);
   if (!process.env.FUXI_SHOTS) autoBackup();                                  // testes não mexem na pasta de backups
   createMainWindow(false);
   try { createTray(); } catch {}
@@ -1695,6 +1739,6 @@ app.whenReady().then(() => {
   setTimeout(() => checkBattery().catch(() => {}), 6000); loop(checkBattery, 90000, 120000);                 // bateria do fone
   setTimeout(() => { if (!state.perf) scanLibs().catch(() => {}); }, 20000); setInterval(() => { if (!state.perf) scanLibs().catch(() => {}); }, 12 * 3600e3);   // jogos instalados (Steam/Epic/Riot)
 });
-app.on('will-quit', () => globalShortcut.unregisterAll());
+app.on('will-quit', () => { globalShortcut.unregisterAll(); try { CL.stop(); } catch {} });
 app.on('before-quit', () => { quitting = true; if (previewActive) { try { applyEq(state.active); } catch {} } });   // nunca deixa uma prévia não salva no som
 app.on('window-all-closed', () => { if (!tray) app.quit(); });

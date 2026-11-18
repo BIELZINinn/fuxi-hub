@@ -23,6 +23,7 @@ function go(p) {
   if (p === 'device') loadHid();
   if (p === 'games' && typeof replayGames === 'function') replayGames();
   if (p === 'cloud' && typeof loadCloudWins === 'function') loadCloudWins();
+  if (p === 'clips' && window.ClipsUI) ClipsUI.enter();
   if (p === 'stats' && window.Stats) { Stats.render(); setTimeout(Stats.enter, 450); }
 }
 document.querySelectorAll('[data-w]').forEach(b => b.onclick = () => hub.win(b.dataset.w));
@@ -567,6 +568,7 @@ async function loadHid() {
 
 // ---------- ajustes: atalhos e bandeja ----------
 const HK = [
+  ['clip', 'Salvar clipe', 'Salva os últimos segundos do jogo (ligue em Clipes)'],
   ['micMute', 'Mutar / ativar microfone', 'Funciona com o jogo em primeiro plano'],
   ['nextPreset', 'Próximo preset', 'Padrão → Música → Filmes → Chamadas → os seus'],
   ['prevPreset', 'Preset anterior', ''],
@@ -574,7 +576,7 @@ const HK = [
   ['show', 'Abrir o Fuxi Hub', 'Traz a janela para a frente'],
   ['mini', 'Mini-janela', 'Volume, preset, microfone e espectro numa janela flutuante que some sozinha']
 ];
-const HK_DEFAULT = { micMute: 'Ctrl+Alt+M', nextPreset: 'Ctrl+Alt+Right', prevPreset: 'Ctrl+Alt+Left', bypass: 'Ctrl+Alt+B', show: 'Ctrl+Alt+F', mini: 'Ctrl+Alt+V' };
+const HK_DEFAULT = { clip: 'Alt+F10', micMute: 'Ctrl+Alt+M', nextPreset: 'Ctrl+Alt+Right', prevPreset: 'Ctrl+Alt+Left', bypass: 'Ctrl+Alt+B', show: 'Ctrl+Alt+F', mini: 'Ctrl+Alt+V' };
 const KEYCODE = { ArrowLeft: 'Left', ArrowRight: 'Right', ArrowUp: 'Up', ArrowDown: 'Down', Space: 'Space', Home: 'Home', End: 'End', PageUp: 'PageUp', PageDown: 'PageDown', Insert: 'Insert', Delete: 'Delete', Tab: 'Tab' };
 const NICE = { Left: '←', Right: '→', Up: '↑', Down: '↓', Space: 'Espaço', Super: 'Win' };
 const kbds = a => a ? a.split('+').map(k => `<kbd>${esc(NICE[k] || k)}</kbd>`).join('') : '<em>Sem atalho</em>';
@@ -994,6 +996,20 @@ function renderConfig() {
     $('#bkOut').onclick = async () => { const r = await hub.backupExport(); if (r) toast('Backup salvo: ' + r); else if (r === false) toast('Não consegui salvar o backup'); };
     $('#bkIn').onclick = async () => { const r = await hub.backupImport(); if (r === true) toast('Backup restaurado'); else if (r === false) toast('Esse arquivo não é um backup válido do Fuxi Hub'); };
     $('#bkDir').onclick = () => hub.openBackupFolder();
+    $('#sgBox').insertAdjacentHTML('beforeend', `<div class="card"><h3>Google Drive</h3>
+      <div class="srow"><div class="lb"><b id="gdTitle">Salvar tudo no Google Drive</b><small id="gdSub">Entre com sua conta Google e o hub guarda seus presets, atalhos, avisos e o resto numa pasta oculta do seu Drive. Depois de formatar o PC, é só entrar de novo.</small></div>
+        <div class="btns" style="margin:0"><button class="ghost" id="gdLogin">Entrar com Google</button><button class="ghost" id="gdLogout" hidden>Sair</button></div></div>
+      <div id="gdSetup" class="srow" style="display:block"><div class="lb"><b>Credenciais do Google (uma vez só)</b><small>Cole o Client ID e o Client Secret criados no Google Cloud Console (tipo “App para computador”).</small></div>
+        <div class="btns" style="margin:8px 0 0;flex-wrap:wrap"><input id="gdId" placeholder="Client ID (…apps.googleusercontent.com)" style="flex:2;min-width:220px"><input id="gdSec" type="password" placeholder="Client Secret" style="flex:1;min-width:140px"><button class="ghost" id="gdSave">Salvar</button></div></div>
+      <div id="gdActs" class="srow" hidden><div class="lb"><b>Sincronização automática</b><small id="gdLast"></small></div>
+        <div class="btns" style="margin:0"><button class="ghost" id="gdSync">Sincronizar agora</button><button class="ghost" id="gdRest">Restaurar do Drive</button></div></div>
+      <div id="gdErr" class="srow" hidden style="color:#ff6b6b"></div></div>`);
+    const gdRes = r => { if (r && r.ok === false && r.error) toast(r.error); else if (r && r.action === 'enviado') toast('Salvo no Google Drive'); else if (r && r.action === 'restaurado') toast('Configurações restauradas do Google Drive'); else if (r && r.action === 'igual') toast('Já está tudo sincronizado'); };
+    $('#gdSave').onclick = async () => { const r = await hub.gdriveSetClient($('#gdId').value, $('#gdSec').value); if (r && r.ok) { $('#gdSec').value = ''; toast('Credenciais salvas'); } else if (r && r.error) toast(r.error); };
+    $('#gdLogin').onclick = async () => { toast('Abrindo o navegador para entrar no Google…'); gdRes(await hub.gdriveLogin()); };
+    $('#gdLogout').onclick = async () => { await hub.gdriveLogout(); toast('Você saiu da conta Google'); };
+    $('#gdSync').onclick = async () => gdRes(await hub.gdriveSync());
+    $('#gdRest').onclick = async () => gdRes(await hub.gdriveRestore());
     $('#anBox').innerHTML = `<div class="card"><h3>Animações do app</h3>
       <div class="srow"><div class="lb"><b>Reduzir animações</b><small>Desliga os movimentos da interface (transições, brilhos e entradas). Bom para PCs mais fracos ou se movimento te incomoda.</small></div>
         <label class="switch"><span>Reduzir</span><input type="checkbox" id="uiRm"><i></i></label></div>
@@ -1089,6 +1105,12 @@ function renderConfig() {
   $('#jgDet').checked = S.detectGeneric !== false;
   $('#asw').checked = S.audioSwitch !== false;
   $('#bkAuto').textContent = 'O hub guarda sozinho uma cópia por dia (as 7 últimas).' + (S.lastBackup ? ' Última: ' + S.lastBackup.split('-').reverse().join('/') + '.' : '');
+  { const g = S.gdrive || {}, on = !!g.loggedIn;
+    $('#gdSetup').style.display = g.configured ? 'none' : 'block'; $('#gdActs').hidden = !on; $('#gdLogout').hidden = !on;
+    $('#gdLogin').hidden = on || !g.configured; $('#gdLogin').disabled = !!g.busy; $('#gdSync').disabled = !!g.busy; $('#gdRest').disabled = !!g.busy;
+    $('#gdTitle').textContent = on ? 'Conectado: ' + (g.email || 'Google') : 'Salvar tudo no Google Drive';
+    $('#gdLast').textContent = g.busy ? 'Sincronizando…' : 'O hub envia sozinho cada mudança e confere o Drive de tempos em tempos.' + (g.last ? ' Última vez: ' + new Date(g.last).toLocaleString() + '.' : '');
+    $('#gdErr').hidden = !g.error; $('#gdErr').textContent = g.error || ''; }
   const links = S.profiles.filter(p => p.userExe && p.userExe.length);
   $('#jgLinks').innerHTML = links.length ? links.map(p => `<div class="lkrow"><div><b>${esc(p.name)}</b> <em>${p.userExe.map(esc).join(', ')}</em></div><button class="ghost" data-open="${p.id}" style="padding:5px 12px;font-size:12px">Gerenciar</button></div>`).join('')
     : '<div class="lkrow"><em>Nenhum ainda. Use o botão de corrente no card de um jogo (aba Jogos) se algum não for reconhecido sozinho.</em></div>';
@@ -1207,7 +1229,7 @@ function onState(s) {
   S = s;
   if (!prof(editId)) editId = 'default';
   if (window.Tour) Tour.onState();
-  renderHome(); renderGames(); renderEq(); renderSettings(); renderHotkeys(); renderLinkChips(); renderIntro(); renderConfig(); renderRules(); renderCloud(); renderSurround();
+  renderHome(); renderGames(); renderEq(); renderSettings(); renderHotkeys(); renderLinkChips(); renderIntro(); renderConfig(); renderRules(); renderCloud(); renderSurround(); if (window.ClipsUI) ClipsUI.render();
   if (window.Fx2) Fx2.onState(); if (window.Stats) Stats.render(); if (window.BadgeUi) BadgeUi.render(); if (window.MicUi) MicUi.render(); if (window.UpdUi) UpdUi.render(); if (window.RemoteUi) RemoteUi.render(); if (window.QrHome) QrHome.render(); if (window.News) News.render();
   if (!introDone) {                                              // abertura: só na primeira vez que o estado chega
     introDone = true;

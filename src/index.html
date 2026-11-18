@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
 <title>Fuxi Hub</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: data: blob:; style-src 'self' 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: data: blob:; media-src 'self' file:; style-src 'self' 'unsafe-inline'">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="intro.css">
 <link rel="stylesheet" href="fx.css">
 <link rel="stylesheet" href="tour.css">
+<link rel="stylesheet" href="clips.css">
 </head>
 <body>
 <div class="titlebar">
@@ -25,6 +26,7 @@
   <button class="nav" data-page="mixer" data-tip="Mixer por app"><svg viewBox="0 0 24 24"><rect class="b b1" x="3.5" y="11" width="3.4" height="9" rx="1.7"/><rect class="b b2" x="8.4" y="4" width="3.4" height="16" rx="1.7"/><rect class="b b3" x="13.3" y="9" width="3.4" height="11" rx="1.7"/><rect class="b b4" x="18.2" y="6" width="3.4" height="14" rx="1.7"/></svg></button>
   <button class="nav" data-page="games" data-tip="Jogos"><svg viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="19" height="12" rx="6"/><path d="M7.5 10v4.4M5.3 12.2h4.4"/><circle class="d d1" cx="15.6" cy="10.8" r="1.05"/><circle class="d d2" cx="18" cy="13.4" r="1.05"/></svg></button>
   <button class="nav" data-page="cloud" data-tip="Cloud gaming"><svg viewBox="0 0 24 24"><path d="M7 18.5a4.2 4.2 0 01-.7-8.35A6.2 6.2 0 0118.2 9.4 4.5 4.5 0 0117.4 18.5z"/><path class="up" d="M12 16v-4.2M10.2 13.6 12 11.8l1.8 1.8"/></svg></button>
+  <button class="nav" data-page="clips" data-tip="Clipes"><svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="14" height="13" rx="3"/><path d="M17 10.5l4-2.4v7.8l-4-2.4"/><circle class="rec" cx="7.6" cy="9.8" r="1.1" fill="currentColor" stroke="none"/></svg></button>
   <button class="nav" data-page="stats" data-tip="Seu perfil"><svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 01-8 0z"/><path d="M8 6H5.5a2.5 2.5 0 002.8 3.6M16 6h2.5a2.5 2.5 0 01-2.8 3.6"/><path d="M12 13v4M8.5 20.5h7M9.5 17h5"/></svg></button>
   <button class="nav" data-page="settings" data-tip="Configurações"><svg viewBox="0 0 24 24"><g class="gear"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></g></svg></button>
   <button class="nav" data-page="device" data-tip="Dispositivo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.6"/><circle class="rg rg1" cx="12" cy="12" r="6"/><circle class="rg rg2" cx="12" cy="12" r="9.4"/></svg></button>
@@ -124,6 +126,13 @@
     <div id="clBox"></div>
   </section>
 
+  <!-- CLIPES -->
+  <section class="page" id="p-clips">
+    <header class="ph"><h1>Clipes</h1>
+      <div class="actions"><button class="ghost" id="clFolder">Abrir pasta</button><button class="solid" id="clSave">Salvar clipe agora</button></div></header>
+    <div id="clipsBox"></div>
+  </section>
+
   <!-- PERFIL -->
   <section class="page" id="p-stats">
     <header class="ph"><h1>Seu perfil</h1></header>
@@ -177,6 +186,7 @@
 <script src="app.js"></script>
 <script src="fx2.js"></script>
 <script src="stats.js"></script>
+<script src="clipsui.js"></script>
 <script src="badgeui.js"></script>
 <script src="micui.js"></script>
 <script src="updui.js"></script>
