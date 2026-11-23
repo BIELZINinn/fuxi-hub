@@ -7,13 +7,13 @@ const fs = require('fs'), path = require('path'), cp = require('child_process');
 const FF_URL = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip';
 const SEG = 1;                                                      // segundos por pedaço do buffer (também o intervalo de quadros-chave)
 const ENCODERS = ['h264_nvenc', 'h264_amf', 'h264_qsv', 'libx264'];
-const DEFAULTS = { enabled: false, auto: true, seconds: 60, fps: 60, res: 'native', bitrate: 16, mic: false, micGain: 80, monitor: 0, dir: '', maxGB: 20, encoder: 'auto' };
+const DEFAULTS = { enabled: false, onlyGame: false, seconds: 60, fps: 60, res: 'native', bitrate: 16, mic: false, micGain: 80, monitor: 0, dir: '', maxGB: 20, encoder: 'auto' };
 
 let D = null, ff = null, helper = null, running = false, starting = false, encoder = null, buf = '', lastErr = null, lastClip = null;
 let dl = { state: 'idle', pct: 0 }, stopTimer = null, startedAt = 0, saving = false, restarts = [];
 
 const merge = c => { c = c || {}; const n = v => Number(v);
-  return { enabled: !!c.enabled, auto: c.auto !== false, seconds: [15, 30, 60, 120, 180].includes(n(c.seconds)) ? n(c.seconds) : 60, fps: [30, 60].includes(n(c.fps)) ? n(c.fps) : 60,
+  return { enabled: !!c.enabled, onlyGame: c.onlyGame === true, seconds: [15, 30, 60, 120, 180].includes(n(c.seconds)) ? n(c.seconds) : 60, fps: [30, 60].includes(n(c.fps)) ? n(c.fps) : 60,
     res: ['native', '1440', '1080', '720'].includes(c.res) ? c.res : 'native', bitrate: Math.max(4, Math.min(60, Math.round(n(c.bitrate)) || 16)), mic: !!c.mic,
     micGain: Math.max(0, Math.min(200, Math.round(n(c.micGain))) || 80), monitor: Math.max(0, Math.min(7, Math.round(n(c.monitor)) || 0)),
     dir: typeof c.dir === 'string' ? c.dir.slice(0, 260) : '', maxGB: Math.max(0, Math.min(500, Math.round(n(c.maxGB))) || 0), encoder: ['auto', ...ENCODERS].includes(c.encoder) ? c.encoder : 'auto' }; };
@@ -120,7 +120,7 @@ function stop() {
   try { if (p) { p.stdin.end(); p.stdin.destroy(); setTimeout(() => { try { p.kill(); } catch {} }, 1500); } } catch {}
   changed(); return { ok: true };
 }
-const shouldRun = () => { const c = D.cfg(); return c.enabled && (!c.auto || D.inGame()); };
+const shouldRun = () => { const c = D.cfg(); return c.enabled && (!c.onlyGame || D.inGame()); };
 function sync() {                                                     // chamado quando liga/desliga, muda a config ou o jogo abre/fecha
   clearTimeout(stopTimer);
   if (shouldRun()) { if (!running && !starting) start(); else if (running) { /* config mudou: reinicia só se algo do vídeo mudou */ } }
@@ -141,7 +141,10 @@ const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0');
 function run(args) { return new Promise(res => cp.execFile(ffPath(), args, { windowsHide: true, timeout: 120000 }, e => res(!e))); }
 
 async function save(secs) {
-  if (!running) return { ok: false, error: 'O buffer não está gravando agora.' };
+  if (!running) {
+    const c = D.cfg();
+    return { ok: false, error: !c.enabled ? 'Os clipes estão desligados. Ligue na aba Clipes.' : !hasFfmpeg() ? 'Falta baixar o motor de captura na aba Clipes.' : (c.onlyGame && !D.inGame()) ? 'Nenhum jogo detectado. Na aba Clipes, desligue "Só enquanto um jogo estiver aberto" para gravar sempre.' : (lastErr || 'A gravação ainda está iniciando. Tente de novo em alguns segundos.') };
+  }
   if (saving) return { ok: false, error: 'Já estou salvando um clipe.' };
   saving = true;
   try {

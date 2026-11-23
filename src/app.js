@@ -588,7 +588,7 @@ function accelFrom(e) {
   else if (KEYCODE[e.code]) k = KEYCODE[e.code];
   if (!k) return null;
   const m = [e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && 'Super'].filter(Boolean);
-  return m.length ? m.concat(k).join('+') : null;              // atalho global precisa de pelo menos um modificador
+  return m.length ? m.concat(k).join('+') : (/^F\d+$/.test(k) ? k : null);              // atalho global precisa de um modificador, exceto as teclas F (F1–F24)
 }
 let hkUi = null, hkCap = null;
 function stopCap() { if (hkCap) { document.removeEventListener('keydown', hkCap.fn, true); hkCap = null; } }

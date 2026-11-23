@@ -1,7 +1,7 @@
 // Avisos do Fuxi Hub no canto da tela: entrada/saída animadas, som discreto, pilha de até 3.
 const stack = document.getElementById('stack');
 const MAX = 3;
-const KICK = { game: 'Jogo detectado', gameEnd: 'Jogo encerrado', device: 'Fone', preset: 'Preset', mic: 'Microfone', info: 'Fuxi Hub' };
+const KICK = { clip: 'Clipe', game: 'Jogo detectado', gameEnd: 'Jogo encerrado', device: 'Fone', preset: 'Preset', mic: 'Microfone', info: 'Fuxi Hub' };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const svg = d => `<svg viewBox="0 0 24 24">${d}</svg>`;
 const ICONS = {
@@ -114,7 +114,17 @@ function cloudShimmer(volume) {
 const GAME_GAIN = { apex: 2.257, bf2042: 3.463, cs2: 2.394, cyberpunk: 4.288, dota2: 2.655, eldenring: 2.147, fortnite: 2.379, gow: 1.65, gta5: 5.461, lol: 1.788, overwatch: 1.807, pubg: 2.763, r6: 3, rdr2: 2.235, rocketleague: 2.73, tarkov: 20.515, valorant: 2.311, warzone: 2.553, witcher3: 1.923 };
 function runGame(id, bus0) { const g = actx.createGain(); g.gain.value = GAME_GAIN[id] || 1; g.connect(bus0); GAME_SND[id](g); }
 function playFile(url, volume) { try { const a = new Audio(url); a.volume = Math.max(0, Math.min(1, volume)); a.play().catch(() => {}); } catch {} }
+// clipe salvo: clique de obturador + "ding" subindo (confirmação curta e satisfatória)
+function clipSound(volume) {
+  try {
+    const b = getBus(); b.gain.value = Math.max(0, Math.min(1, volume));
+    noise(b, 0, .05, .16, 'highpass', 3500); noise(b, .07, .07, .1, 'bandpass', 2400, 1200);
+    note(b, 523.25, .1, .22, .09, 'triangle'); note(b, 783.99, .17, .26, .09, 'triangle'); note(b, 1318.5, .26, .7, .1); note(b, 2637, .27, .45, .02);
+    note(b, 110, 0, .22, .16, 'sine', 55);
+  } catch {}
+}
 function playSound(key, volume, file) {
+  if (key === 'clip') return clipSound(volume);
   if (file) return playFile(file, volume);                                  // arquivo de som que você colocou na pasta de sons
   const gid = /^game:(.+)$/.exec(key || ''); if (gid && GAME_SND[gid[1]]) { try { const b = getBus(); b.gain.value = Math.max(0, Math.min(1, volume)); runGame(gid[1], b); } catch {} return; }     // mesmo volume dos arquivos: o ganho do barramento é o volume escolhido
   if (gid) key = 'game';
@@ -167,6 +177,14 @@ function show(p) {
     wrap.innerHTML = `<div class="clip"><div class="card smc" style="--cr:${esc(p.rgb)};--dur:${p.duration}ms">${bn ? `<div class="sm-art" style="background-image:url('${esc(bn)}')"></div>` : `<div class="sm-art ph"><span>${esc(p.initials || '')}</span></div>`}<div class="sm-shade"></div>
       <div class="sm-body"><div class="gm-kick"><i></i>Resumo da sessão</div><b class="sm-title">${esc(p.title)}</b><div class="sm-big">${fmt(s.ms)}<small>jogados agora</small></div>
       <div class="sm-row"><div><small>Preset</small><b>${esc(s.preset || '-')}</b></div><div><small>Partidas</small><b>${s.count}</b></div><div><small>Total</small><b>${fmt(s.total)}</b></div></div></div><i class="bar"></i></div></div>`;
+  } else
+  if (p.kind === 'clip') {
+    wrap.classList.add('cpw'); wrap.style.setProperty('--dx', '0px'); wrap.style.setProperty('--dxo', '0px');
+    const bars = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => `<i style="--i:${i}"></i>`).join('');
+    wrap.innerHTML = `<div class="clip"><div class="card cpc" style="--cr:${esc(p.rgb)};--dur:${p.duration}ms">
+      <div class="cp-flash"></div><div class="cp-rec"><i></i><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 10.5l5-3v9l-5-3"/></svg></div>
+      <div class="cp-tx"><div class="cp-kick">Clipe salvo</div><b>${esc(p.title === 'Clipe salvo' ? 'Momento guardado' : p.title)}</b><span>${esc(p.body)}</span></div>
+      <div class="cp-eq">${bars}</div><i class="bar"></i></div></div>`;
   } else
   if ((p.kind === 'game' || p.kind === 'gameEnd') && !compact) {
     wrap.classList.add('gmw');

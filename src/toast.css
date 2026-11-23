@@ -113,3 +113,24 @@ html,body{background:transparent;overflow:hidden;font-family:"Segoe UI Variable"
 .sm-row{display:flex;gap:10px;margin-top:14px;opacity:0;animation:up .6s .8s ease forwards}
 .sm-row div{flex:1;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
 .sm-row small{display:block;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#a8a8b4}.sm-row b{display:block;margin-top:2px;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* clipe salvo: cai do topo com um pulso vermelho, ícone de gravação e barras de áudio animadas */
+.wrap.cpw{transform:translateY(-38px) scale(.9);transition:grid-template-rows .5s cubic-bezier(.2,.8,.2,1),opacity .3s ease,transform .6s cubic-bezier(.2,1.35,.3,1),filter .4s ease}
+.wrap.cpw.in{transform:none}
+.wrap.cpw.out{transform:translateY(-24px) scale(.96)}
+.cpc{width:384px;gap:14px;background:linear-gradient(120deg,rgba(var(--cr),.16),rgba(6,6,9,.95) 55%)}
+.cpc:before{display:none}
+.cp-flash{position:absolute;inset:0;background:radial-gradient(circle at 30px 50%,rgba(var(--cr),.55),transparent 55%);opacity:0;animation:cpflash .9s ease-out .15s}
+@keyframes cpflash{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+.cp-rec{position:relative;flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:rgba(var(--cr),.16);border:1px solid rgba(var(--cr),.55);animation:cpring 1.2s ease-out .1s}
+@keyframes cpring{0%{box-shadow:0 0 0 0 rgba(var(--cr),.7)}100%{box-shadow:0 0 0 22px rgba(var(--cr),0)}}
+.cp-rec svg{width:26px;height:26px;fill:none;stroke:rgb(var(--cr));stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.cp-rec i{position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%;background:rgb(var(--cr));box-shadow:0 0 10px rgba(var(--cr),.9);animation:cpdot .8s ease-in-out infinite}
+@keyframes cpdot{50%{opacity:.25}}
+.cp-tx{min-width:0;flex:1}
+.cp-kick{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(var(--cr),.95);margin-bottom:3px;animation:up .5s ease .2s both}
+.cp-tx b{display:block;font-size:16px;font-weight:700;animation:up .5s ease .28s both}
+.cp-tx span{display:block;font-size:12px;color:#9a9aa6;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:up .5s ease .36s both}
+.cp-eq{flex:none;display:flex;align-items:flex-end;gap:3px;height:30px}
+.cp-eq i{width:3px;height:100%;border-radius:2px;background:rgb(var(--cr));transform-origin:bottom;animation:eqb .6s ease-in-out infinite alternate;animation-delay:calc(var(--i) * -.11s);opacity:.85}
+.wrap.anim-none .cpc .cp-eq i{animation:none!important;transform:scaleY(.6)!important}

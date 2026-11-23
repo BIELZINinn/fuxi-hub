@@ -40,7 +40,7 @@ function mergeNotify(n) {                    // completa o que falta e corrige v
 // ---- atalhos globais e bandeja ----
 const HOTKEY_DEFAULT = { enabled: true, keys: { clip: 'Alt+F10', micMute: 'Ctrl+Alt+M', nextPreset: 'Ctrl+Alt+Right', prevPreset: 'Ctrl+Alt+Left', bypass: 'Ctrl+Alt+B', show: 'Ctrl+Alt+F', mini: 'Ctrl+Alt+V' } };
 const HOTKEY_ACTIONS = Object.keys(HOTKEY_DEFAULT.keys);
-const ACCEL_OK = /^((Ctrl|Alt|Shift|Super)\+)+([A-Z0-9]|F([1-9]|1[0-9]|2[0-4])|Left|Right|Up|Down|Space|Home|End|PageUp|PageDown|Insert|Delete|Plus|Tab)$/;
+const ACCEL_OK = /^(((Ctrl|Alt|Shift|Super)\+)+([A-Z0-9]|F([1-9]|1[0-9]|2[0-4])|Left|Right|Up|Down|Space|Home|End|PageUp|PageDown|Insert|Delete|Plus|Tab)|F([1-9]|1[0-9]|2[0-4]))$/;   // tecla F sozinha também vale (ex.: F9)
 function mergeHotkeys(h) {
   const d = HOTKEY_DEFAULT, m = { enabled: !(h && h.enabled === false), keys: { ...d.keys } };
   if (h && h.keys) for (const a of HOTKEY_ACTIONS) if (a in h.keys) m.keys[a] = (h.keys[a] === '' || ACCEL_OK.test(h.keys[a])) ? h.keys[a] : d.keys[a];
@@ -983,9 +983,9 @@ let hotkeyErrors = {};
 let overlay = null, overlayReady = false, overlayQueue = [], overlayHideTimer = null, lastKnown = null;
 const ini = name => String(name).split(/\s+/).map(w => w[0]).join('').slice(0, 3).toUpperCase();
 const hexRgb = h => { h = String(h || '#2ef2ff').replace('#', ''); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) || 0); };
-function placeOverlay() {
+function placeOverlay(pos) {
   if (!overlay || overlay.isDestroyed()) return;
-  const wa = screen.getPrimaryDisplay().workArea, W = 420, H = Math.min(wa.height, 560), pos = settings.notify.position;
+  const wa = screen.getPrimaryDisplay().workArea, W = 420, H = Math.min(wa.height, 560); pos = pos || settings.notify.position;
   overlay.setBounds({ x: /right$/.test(pos) ? wa.x + wa.width - W : wa.x, y: /^top/.test(pos) ? wa.y : wa.y + wa.height - H, width: W, height: H });
 }
 function ensureOverlay() {
@@ -1158,8 +1158,8 @@ function notify(kind, o, force) {
   const color = o.color || '#2ef2ff';
   const p = { summary: o.summary || null, id: o.id || kind, kind, soundKey: o.soundKey || kind, soundFile: o.soundFile || null, cloud: o.cloud || null, title: o.title, body: o.body || '', color, rgb: hexRgb(color).join(','),
     art: o.art || null, banner: o.banner || null, initials: o.initials || '', icon: o.icon || null, eq: o.eq || null,
-    duration: n.duration * 1000, position: n.position, style: n.style, anim: n.anim, sound: !!n.sound && !process.env.FUXI_NO_SOUND && kind !== 'summary', volume: n.volume };   // FUXI_NO_SOUND: só para testes
-  const w = ensureOverlay(); placeOverlay();
+    duration: (o.duration || n.duration) * 1000, position: o.position || n.position, style: n.style, anim: n.anim, sound: (o.sound === true || !!n.sound) && !process.env.FUXI_NO_SOUND && kind !== 'summary', volume: o.sound === true ? Math.max(n.volume, .6) : n.volume };   // FUXI_NO_SOUND: só para testes; o.sound/o.position: avisos que escolhem o próprio som e canto (clipe)
+  const w = ensureOverlay(); placeOverlay(p.position);
   clearTimeout(overlayHideTimer); clearTimeout(overlayIdle);
   if (!w.isVisible()) w.showInactive();
   p.lang = settings.ui.lang; if (overlayReady) w.webContents.send('toast', p); else overlayQueue.push(p);
@@ -1402,7 +1402,7 @@ async function saveClip(secs) {
   const c = settings.clips;
   if (!c.enabled) return notify('info', { id: 'clip', title: 'Clipes desligados', body: 'Ative em Clipes para gravar os últimos segundos do jogo.', icon: 'info', color: '#ffb02e' }, true);
   const r = await CL.save(secs);
-  if (r.ok) notify('info', { id: 'clip', title: 'Clipe salvo', body: r.name.replace(/\.mp4$/i, ''), icon: 'info', color: '#2ef2ff' }, true);
+  if (r.ok) notify('clip', { id: 'clip', soundKey: 'clip', sound: true, duration: 4, position: /^top/.test(settings.notify.position) ? settings.notify.position : 'top-right', title: 'Clipe salvo', body: r.seconds + ' s · ' + r.name.replace(/\.mp4$/i, ''), color: '#ff3b52' }, true);
   else notify('info', { id: 'clip', title: 'Não salvei o clipe', body: r.error || 'Erro desconhecido', icon: 'info', color: '#ff4d6d' }, true);
   return r;
 }
