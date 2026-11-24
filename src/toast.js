@@ -200,7 +200,7 @@ function show(p) {
       <div class="gm-eq">${bars}</div><i class="bar"></i></div></div>`;
   } else
   wrap.innerHTML = `<div class="clip"><div class="card ${compact ? 'compact' : ''}" style="--cr:${esc(p.rgb)};--dur:${p.duration}ms">
-    <div class="ic">${icon}</div>
+    <div class="ic${p.logo ? ' logo' : ''}">${icon}</div>
     <div class="tx"><div class="kick">${esc(KICK[p.kind] || KICK.info)} · Fuxi Hub</div><b>${esc(p.title)}</b><span>${esc(p.body)}</span></div>
     ${compact ? '' : spark(p.eq, p.rgb)}<i class="bar"></i></div></div>`;
   if (top) stack.insertBefore(wrap, stack.firstChild); else stack.appendChild(wrap);

@@ -847,7 +847,10 @@ function detectRule(names) {
 }
 function notifyRule(r) {
   const p = findProfile(r.preset); if (!p) return;
-  notify('preset', { id: 'rule', title: r.label || r.exe.replace(/\.exe$/i, ''), body: r.media ? `Preset ${p.name}` : `Regra: preset ${p.name}`, icon: 'preset', color: p.color, eq: eqOf(p) });
+  const site = r.media && /^media-(spotify|youtube)$/.test(r.id || '') ? r.id.slice(6) : null;      // Spotify / YouTube (app ou qualquer navegador): logo da marca no lugar do ícone
+  const BRAND = { spotify: '#1db954', youtube: '#ff2a2a' };
+  notify('preset', { id: 'rule', title: r.label || r.exe.replace(/\.exe$/i, ''), body: r.media ? `Preset ${p.name}` : `Regra: preset ${p.name}`, icon: 'preset', color: site ? BRAND[site] : p.color, eq: eqOf(p),
+    ...(site ? { art: pathToFileURL(path.join(__dirname, 'assets', 'services', site + '-badge.png')).href, logo: true } : {}) });
 }
 const restoreTarget = () => (curRule && findProfile(curRule.preset) ? curRule.preset : null) || settings.manual || 'default';
 
@@ -1157,7 +1160,7 @@ function notify(kind, o, force) {
   if (!force && n.dnd && state.game && ['preset', 'mic', 'device', 'info'].includes(kind) && !n.dndAllow[kind === 'info' ? 'preset' : kind]) return;   // jogando: não incomoda
   const color = o.color || '#2ef2ff';
   const p = { summary: o.summary || null, id: o.id || kind, kind, soundKey: o.soundKey || kind, soundFile: o.soundFile || null, cloud: o.cloud || null, title: o.title, body: o.body || '', color, rgb: hexRgb(color).join(','),
-    art: o.art || null, banner: o.banner || null, initials: o.initials || '', icon: o.icon || null, eq: o.eq || null,
+    art: o.art || null, logo: !!o.logo, banner: o.banner || null, initials: o.initials || '', icon: o.icon || null, eq: o.eq || null,
     duration: (o.duration || n.duration) * 1000, position: o.position || n.position, style: n.style, anim: n.anim, sound: (o.sound === true || !!n.sound) && !process.env.FUXI_NO_SOUND && kind !== 'summary', volume: o.sound === true ? Math.max(n.volume, .6) : n.volume };   // FUXI_NO_SOUND: só para testes; o.sound/o.position: avisos que escolhem o próprio som e canto (clipe)
   const w = ensureOverlay(); placeOverlay(p.position);
   clearTimeout(overlayHideTimer); clearTimeout(overlayIdle);
